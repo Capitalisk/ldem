@@ -1,0 +1,23 @@
+{
+  "name": "ldex-core",
+  "version": "1.0.0",
+  "description": "LDEX core controller.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ldex",
+    "dex",
+    "leasehold",
+    "lisk"
+  ],
+  "author": "Jonathan Gros-Dubois",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "eetase": "^3.0.2",
+    "minimist": "^1.2.0",
+    "socketcluster-client": "^15.1.0",
+    "socketcluster-server": "^15.0.1"
+  }
+}

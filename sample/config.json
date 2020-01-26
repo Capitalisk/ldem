@@ -1,0 +1,10 @@
+{
+  "modules": {
+    "one": {
+      "path": "sample/modules/one.js"
+    },
+    "two": {
+      "path": "sample/modules/two.js"
+    }
+  }
+}

@@ -31,12 +31,6 @@ class Channel extends AsyncStreamEmitter {
       });
 
       (async () => {
-        for await (let event of client.listener('connect')) {
-          console.log('CONNECT!!!! TODO 2');
-        }
-      })();
-
-      (async () => {
         for await (let {error} of client.listener('error')) {
           this.emit('error', {error});
         }

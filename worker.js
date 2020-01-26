@@ -104,5 +104,4 @@ httpServer.listen(ipcPath);
   })();
 
   targetModule.load(channel);
-
 })();

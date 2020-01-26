@@ -5,11 +5,26 @@ class Channel extends AsyncStreamEmitter {
   constructor(options = {}) {
     super();
 
-    let {dependencies, dependents, modulePathFunction} = options;
+    let {
+      moduleName,
+      dependencies,
+      dependents,
+      modulePathFunction,
+      exchange,
+      subscribeTimeout,
+      defaultTargetModuleName
+    } = options;
+
+    this.exchange = exchange;
+    this.moduleName = moduleName;
     this.dependencies = dependencies || [];
     this.dependents = dependents;
     this.clients = {};
+    this.subscribeTimeout = subscribeTimeout;
+    this._dependencyLookup = {};
+
     for (let moduleName of this.dependencies) {
+      this._dependencyLookup[moduleName] = true;
       let client = socketClusterClient.create({
         protocolScheme: 'ws+unix',
         socketPath: modulePathFunction(moduleName)
@@ -31,16 +46,84 @@ class Channel extends AsyncStreamEmitter {
     }
   }
 
-  subscribe(channelName, handler) {
-
+  async subscribe(channel, handler) {
+    let {targetModuleName} = this._getCommandParts(channel);
+    if (!this._dependencyLookup[targetModuleName]) {
+      let error = new Error(
+        `Cannot subscribe to the ${
+          channel
+        } channel on the ${
+          targetModuleName
+        } module because it is not listed as a dependency of the ${
+          this.moduleName
+        } module`
+      );
+      error.name = 'InvalidTargetModuleError';
+      throw error;
+    }
+    let channelObject = this.clients[targetModuleName].subscribe(channel);
+    (async () => {
+      for await (let event of channelObject) {
+        await handler(event);
+      }
+    })();
+    return channelObject.listener('subscribe').once(this.subscribeTimeout);
   }
 
-  publish(channelName, data) {
-
+  unsubscribe(channel, handler) {
+    let {targetModuleName} = this._getCommandParts(channel);
+    if (!this._dependencyLookup[targetModuleName]) {
+      let error = new Error(
+        `Cannot unsubscribe from the ${
+          channel
+        } channel on the ${
+          targetModuleName
+        } module because it is not listed as a dependency of the ${
+          this.moduleName
+        } module`
+      );
+      error.name = 'InvalidTargetModuleError';
+      throw error;
+    }
+    let targetClient = this.clients[targetModuleName];
+    let channelObject = targetClient.unsubscribe(channel);
+    targetClient.closeChannel(channel);
   }
 
-  invoke(actionName, data) {
+  publish(channel, data) {
+    this.exchange.transmitPublish(channel, data);
+  }
 
+  async invoke(action, data) {
+    let {targetModuleName, targetCommand} = this._getCommandParts(action);
+    if (!this._dependencyLookup[targetModuleName]) {
+      let error = new Error(
+        `Cannot invoke action ${
+          action
+        } on the ${
+          targetModuleName
+        } module because it is not listed as a dependency of the ${
+          this.moduleName
+        } module`
+      );
+      error.name = 'InvalidTargetModuleError';
+      throw error;
+    }
+    return this.clients[targetModuleName].invoke(targetCommand, data);
+  }
+
+  _getCommandParts(command) {
+    let targetModuleName;
+    let targetCommand;
+    if (command.indexOf(':') === -1) {
+      targetModuleName = this.defaultTargetModuleName;
+      targetCommand = command;
+    } else {
+      let parts = command.split(':');
+      targetModuleName = parts[0];
+      targetCommand = parts.slice(1).join(':');
+    }
+    return {targetModuleName, targetCommand};
   }
 }
 

@@ -11,6 +11,9 @@ const argv = require('minimist')(process.argv.slice(2));
 const moduleName = argv.n;
 const modulePath = argv.p;
 const HANDSHAKE_TIMEOUT = 2000;
+const DEFAULT_MODULE_NAME = 'chain';
+
+const SUBSCRIBE_TIMEOUT = 5000;
 
 let logger = new Logger();
 
@@ -20,6 +23,52 @@ let dependents = [];
 function getUnixSocketPath(targetModuleName) {
   return `/tmp/ldex-${targetModuleName}.sock`;
 }
+
+let ipcPath = getUnixSocketPath(moduleName);
+try {
+  fs.unlinkSync(ipcPath);
+} catch (error) {}
+
+let httpServer = http.createServer();
+let agServer = socketClusterServer.attach(httpServer);
+
+(async () => {
+  for await (let {error} of agServer.listener('error')) {
+    logger.error(error);
+  }
+})();
+
+(async () => {
+  for await (let {socket} of agServer.listener('connection')) {
+
+    (async () => {
+      for await (let {error} of socket.listener('error')) {
+        logger.warn(error);
+      }
+    })();
+
+    let moduleActionNames = Object.keys(targetModule.actions);
+    for (let actionName of moduleActionNames) {
+      let moduleActionHandler = targetModule.actions[actionName].handler;
+      (async () => {
+        for await (let request of socket.procedure(actionName)) {
+          let result;
+          try {
+            result = await moduleActionHandler({
+              params: request.data
+            });
+          } catch (error) {
+            request.error(error);
+            continue;
+          }
+          request.end(result);
+        }
+      })();
+    }
+  }
+})();
+
+httpServer.listen(ipcPath);
 
 (async () => {
   process.send({
@@ -38,18 +87,14 @@ function getUnixSocketPath(targetModuleName) {
   let [masterHandshake] = result;
   dependents = masterHandshake.dependents;
 
-  let ipcPath = getUnixSocketPath(moduleName);
-  try {
-    fs.unlinkSync(ipcPath);
-  } catch (error) {}
-
-  let httpServer = http.createServer();
-  let agServer = socketClusterServer.attach(httpServer);
-
   let channel = new Channel({
+    moduleName,
     dependencies: targetModule.dependencies,
     dependents,
-    modulePathFunction: getUnixSocketPath
+    modulePathFunction: getUnixSocketPath,
+    exchange: agServer.exchange,
+    subscribeTimeout: SUBSCRIBE_TIMEOUT,
+    defaultTargetModuleName: DEFAULT_MODULE_NAME
   });
 
   (async () => {
@@ -59,38 +104,5 @@ function getUnixSocketPath(targetModuleName) {
   })();
 
   targetModule.load(channel);
-
-  (async () => {
-    for await (let {error} of agServer.listener('error')) {
-      logger.error(error);
-    }
-  })();
-
-  (async () => {
-    for await (let {socket} of agServer.listener('connection')) {
-
-      (async () => {
-        for await (let {error} of socket.listener('error')) {
-          logger.warn(error);
-        }
-      })();
-
-      (async () => {
-        for await (let data of socket.receiver('event')) {
-
-        }
-      })();
-
-      (async () => {
-        for await (let request of socket.procedure('action')) {
-
-        }
-      })();
-    }
-  })();
-
-  console.log('LISTEN TODO 22', ipcPath)
-
-  httpServer.listen(ipcPath);
 
 })();

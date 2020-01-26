@@ -1,2 +1,2 @@
-# ldex-framework
-Framework optimized for operating lisk-dex nodes
+# ldem
+Multi-process controller optimized for operating a node with many Lisk modules. Ideal for lisk-dex nodes.

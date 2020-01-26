@@ -85,11 +85,11 @@ httpServer.listen(ipcPath);
   }
 
   let [masterHandshake] = result;
-  dependents = masterHandshake.dependents;
+  let {dependencies, dependents} = masterHandshake;
 
   let channel = new Channel({
     moduleName,
-    dependencies: targetModule.dependencies,
+    dependencies,
     dependents,
     modulePathFunction: getUnixSocketPath,
     exchange: agServer.exchange,

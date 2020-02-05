@@ -17,10 +17,10 @@ module.exports = {
     console.log('Loading module two...');
 
     channel.subscribe('one:testEvent', async (data) => {
-      console.log('Module two received event from module one', data);
+      console.log('Module two received event from module one:', data);
     });
 
-    let result = await channel.invoke('one:doSomething');
+    let result = await channel.invoke('one:doSomething', {number: 1});
     console.log('one:doSomething result:', result);
   },
 

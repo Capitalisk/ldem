@@ -7,7 +7,7 @@ module.exports = {
 
   actions: {
     doSomething: {
-      handler: (action) => 111,
+      handler: (action) => action.params.number + 1,
       isPublic: true
     }
   },

@@ -16,16 +16,13 @@ let logger = new Logger({
 });
 let moduleProcesses = {};
 
-let moduleList = Object.keys(config.modules);
+let moduleList = Object.keys(config.modules).filter(moduleName => !!config.modules[moduleName].modulePath);
 let moduleSet = new Set(moduleList);
 let dependentMap = {};
 
 (async () => {
   for (let moduleName of moduleList) {
     let moduleConfig = config.modules[moduleName];
-    if (!moduleConfig.modulePath) {
-      continue;
-    }
     let modulePath = path.join(CWD, moduleConfig.modulePath);
     let execOptions = {
       env: {...process.env},

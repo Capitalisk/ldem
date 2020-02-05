@@ -23,11 +23,11 @@ class Channel extends AsyncStreamEmitter {
     this.subscribeTimeout = subscribeTimeout;
     this._dependencyLookup = {};
 
-    for (let moduleName of this.dependencies) {
-      this._dependencyLookup[moduleName] = true;
+    for (let dependencyName of this.dependencies) {
+      this._dependencyLookup[dependencyName] = true;
       let client = socketClusterClient.create({
         protocolScheme: 'ws+unix',
-        socketPath: modulePathFunction(moduleName)
+        socketPath: modulePathFunction(dependencyName)
       });
 
       (async () => {
@@ -36,7 +36,7 @@ class Channel extends AsyncStreamEmitter {
         }
       })();
 
-      this.clients[moduleName] = client;
+      this.clients[dependencyName] = client;
     }
   }
 

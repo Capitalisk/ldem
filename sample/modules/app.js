@@ -22,7 +22,7 @@ class AppModule {
         handler: async (action) => ({})
       },
       getApplicationState: {
-        handler: async (action) => (...this.appState)
+        handler: async (action) => ({...this.appState})
       },
       updateApplicationState: {
         handler: async (action) => {

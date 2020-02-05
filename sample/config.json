@@ -5,6 +5,9 @@
     },
     "two": {
       "modulePath": "sample/modules/two.js"
+    },
+    "app": {
+      "modulePath": "sample/modules/app.js"
     }
   }
 }

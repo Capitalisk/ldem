@@ -8,13 +8,28 @@
     },
     "app": {
       "modulePath": "sample/modules/app.js",
-      "os": "linux4.4.0-150-generic",
-      "nonce": "Ab29CRTpcWOw597d",
-      "height": 1,
-      "version": "2.1.2",
-      "protocolVersion": "1.1",
-      "state": 2,
-      "broadhash": "da3ed6a45429278bac2666961289ca17ad86595d33b31037615d4b8e8f158bba"
+      "database": "lisk_test",
+      "components": {
+        "logger": {
+          "logFileName": "logs/testnet/lisk.log",
+          "fileLogLevel": "debug",
+          "consoleLogLevel": "debug"
+        },
+        "storage": {
+          "database": "lisk_test",
+          "logFileName": "logs/testnet/lisk_db.log"
+        },
+        "cache": {}
+      },
+      "nodeInfo": {
+        "os": "linux4.4.0-150-generic",
+        "nonce": "Ab29CRTpcWOw597d",
+        "height": 1,
+        "version": "2.1.2",
+        "protocolVersion": "1.1",
+        "state": 2,
+        "broadhash": "da3ed6a45429278bac2666961289ca17ad86595d33b31037615d4b8e8f158bba"
+      }
     },
     "network": {
       "wsPort": 7001

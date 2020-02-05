@@ -66,13 +66,7 @@ class AppModule {
     this.channel = channel;
     this.options = options;
     this.appState = {
-      version: options.version,
-      os: options.os,
-      protocolVersion: options.protocolVersion,
-      nonce: options.nonce,
-      height: options.height,
-      state: options.state,
-      broadhash: options.broadhash,
+      ...options.nodeInfo,
       wsPort: this.config.modules.network ? this.config.modules.network.wsPort : null,
       httpPort: this.config.modules.http_api ? this.config.modules.http_api.httpPort : null,
     };

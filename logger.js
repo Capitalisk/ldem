@@ -1,9 +1,16 @@
 class Logger {
+  constructor(options = {}) {
+    this.process = options.process;
+  }
   error(error) {
-    console.error(`[${Date.now()}]`, error)
+    if (!this.process || this.process.connected) {
+      console.error(`[${Date.now()}]`, error)
+    }
   }
   warn(error) {
-    console.warn(`[${Date.now()}]`, error);
+    if (!this.process || this.process.connected) {
+      console.warn(`[${Date.now()}]`, error);
+    }
   }
 }
 

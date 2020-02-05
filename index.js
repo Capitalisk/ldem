@@ -15,6 +15,7 @@ const WORKER_PATH = path.join(__dirname, 'worker.js');
 const CWD = process.cwd();
 
 let moduleList = Object.keys(config.modules);
+let moduleSet = new Set(moduleList);
 let dependentMap = {};
 
 (async () => {
@@ -53,6 +54,15 @@ let dependentMap = {};
     if (workerHandshake.dependencies == null) {
       moduleProc.dependencies = moduleList.filter(mod => mod !== moduleName);
     } else {
+      for (let dependencyName of workerHandshake.dependencies) {
+        if (!moduleSet.has(dependencyName)) {
+          let error = new Error(
+            `Could not find a dependency ${dependencyName} required by the ${moduleName} module`
+          );
+          logger.error(error);
+          process.exit(1);
+        }
+      }
       moduleProc.dependencies = workerHandshake.dependencies;
     }
     for (let dep of moduleProc.dependencies) {

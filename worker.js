@@ -15,7 +15,9 @@ const DEFAULT_MODULE_NAME = 'chain';
 
 const SUBSCRIBE_TIMEOUT = 5000;
 
-let logger = new Logger();
+let logger = new Logger({
+  process
+});
 
 let targetModule = require(modulePath);
 let dependents = [];

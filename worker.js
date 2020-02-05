@@ -19,7 +19,8 @@ let logger = new Logger({
   process
 });
 
-let targetModule = require(modulePath);
+let TargetModuleClass = require(modulePath);
+let targetModule = new TargetModuleClass();
 let dependents = [];
 
 function getUnixSocketPath(targetModuleName) {

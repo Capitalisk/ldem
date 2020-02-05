@@ -1,19 +1,25 @@
-module.exports = {
-  alias: 'two',
+class TwoModule {
+  get alias() {
+    return 'two';
+  }
 
-  dependencies: [
-    'one'
-  ],
+  get dependencies() {
+    return ['one'];
+  }
 
-  events: [],
+  get events() {
+    return [];
+  }
 
-  actions: {
-    doSomething: {
-      handler: (action) => 222
-    }
-  },
+  get actions() {
+    return {
+      doSomething: {
+        handler: (action) => 222
+      }
+    };
+  }
 
-  load: async (channel, options) => {
+  async load(channel, options) {
     console.log('Loading module two...');
 
     channel.subscribe('one:testEvent', async (data) => {
@@ -22,7 +28,9 @@ module.exports = {
 
     let result = await channel.invoke('one:doSomething', {number: 1});
     console.log('one:doSomething result:', result);
-  },
+  }
 
-  unload: async () => {}
+  async unload() {}
 };
+
+module.exports = TwoModule;

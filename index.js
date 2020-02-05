@@ -21,7 +21,7 @@ let dependentMap = {};
 (async () => {
   for (let moduleName of moduleList) {
     let moduleConfig = config.modules[moduleName];
-    let modulePath = path.join(CWD, moduleConfig.path);
+    let modulePath = path.join(CWD, moduleConfig.modulePath);
     let execOptions = {
       env: {...process.env},
       execArgv: process.execArgv,

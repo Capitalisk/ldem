@@ -1,23 +1,31 @@
-module.exports = {
-  alias: 'one',
+class OneModule {
+  get alias() {
+    return 'one';
+  }
 
-  dependencies: [],
+  get dependencies() {
+    return [];
+  }
 
-  events: [],
+  get events() {
+    return [];
+  }
 
-  actions: {
-    doSomething: {
+  get actions() {
+    return {
       handler: (action) => action.params.number + 1,
-      isPublic: true
-    }
-  },
+      isPublic: true // TODO 2: Implement
+    };
+  }
 
-  load: async (channel, options) => {
+  async load(channel, options) {
     console.log('Loading module one...');
     setInterval(() => {
       channel.publish('one:testEvent', 'This is module one');
     }, 1000);
-  },
+  }
 
-  unload: async () => {}
+  async unload() {}
 };
+
+module.exports = OneModule;

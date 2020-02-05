@@ -4,15 +4,16 @@ const eetase = require('eetase');
 const Logger = require('./logger');
 const argv = require('minimist')(process.argv.slice(2));
 const configPath = argv.c;
-const config = require(configPath);
+
+const CWD = process.cwd();
 const HANDSHAKE_TIMEOUT = 2000;
+const WORKER_PATH = path.join(__dirname, 'worker.js');
+const CONFIG_PATH = path.join(CWD, configPath);
+
+const config = require(CONFIG_PATH);
 
 let logger = new Logger();
-
 let moduleProcesses = {};
-
-const WORKER_PATH = path.join(__dirname, 'worker.js');
-const CWD = process.cwd();
 
 let moduleList = Object.keys(config.modules);
 let moduleSet = new Set(moduleList);

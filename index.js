@@ -11,7 +11,9 @@ const CONFIG_PATH = path.join(CWD, argv.c);
 
 const config = require(CONFIG_PATH);
 
-let logger = new Logger();
+let logger = new Logger({
+  processType: 'master'
+});
 let moduleProcesses = {};
 
 let moduleList = Object.keys(config.modules);

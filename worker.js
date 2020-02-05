@@ -17,6 +17,7 @@ const DEFAULT_MODULE_NAME = 'chain';
 const SUBSCRIBE_TIMEOUT = 5000;
 
 let logger = new Logger({
+  processType: 'worker',
   process
 });
 

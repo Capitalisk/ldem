@@ -35,7 +35,7 @@ let dependentMap = {};
     ];
     let moduleProc = fork(WORKER_PATH, process.argv.slice(2).concat(workerArgs), execOptions);
     eetase(moduleProc);
-    moduleProc.config = moduleConfig;
+    moduleProc.moduleConfig = moduleConfig;
 
     (async () => {
       for await (let [error] of moduleProc.listener('error')) {
@@ -80,7 +80,8 @@ let dependentMap = {};
     let moduleProc = moduleProcesses[moduleName];
     moduleProc.send({
       event: 'masterHandshake',
-      config: moduleProc.config,
+      moduleConfig: moduleProc.moduleConfig,
+      appConfig: config,
       dependencies: moduleProc.dependencies,
       dependents: dependentMap[moduleName] || []
     });

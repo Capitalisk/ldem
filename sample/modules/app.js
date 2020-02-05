@@ -21,12 +21,7 @@ class AppModule {
     return {
       getComponentConfig: {
         handler: async (action) => {
-          if (action.params === 'storage') {
-            return {
-              database: this.options.database
-            };
-          }
-          return {};
+          return this.options.components[action.params];
         }
       },
       getApplicationState: {
@@ -41,13 +36,37 @@ class AppModule {
   }
 
   updateAppState(newAppState) {
-    this.appState = {...newAppState};
+    let {
+      version,
+      minVersion,
+      protocolVersion,
+      networkId,
+      wsPort,
+      httpPort
+    } = this.appState;
+    this.appState = {
+      version,
+      minVersion,
+      protocolVersion,
+      networkId,
+      wsPort,
+      httpPort,
+      ...newAppState
+		};
     this.channel.publish('state:updated', this.appState);
   }
 
   async load(channel, options) {
     this.channel = channel;
     this.options = options;
+    this.appState = {
+			version: options.version,
+			minVersion: options.minVersion,
+			protocolVersion: options.protocolVersion,
+			networkId: options.networkId,
+			wsPort: this.config.modules.network ? this.config.modules.network.wsPort : null,
+			httpPort: this.config.modules.network ? this.config.modules.http_api.httpPort : null,
+		};
   }
 
   async unload() {}

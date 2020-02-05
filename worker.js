@@ -89,7 +89,7 @@ httpServer.listen(ipcPath);
   }
 
   let [masterHandshake] = result;
-  let {config, dependencies, dependents} = masterHandshake;
+  let {moduleConfig, appConfig, dependencies, dependents} = masterHandshake;
 
   let channel = new Channel({
     moduleName: MODULE_NAME,
@@ -107,6 +107,7 @@ httpServer.listen(ipcPath);
     }
   })();
 
-  targetModule.options = config;
-  targetModule.load(channel, config);
+  targetModule.options = moduleConfig;
+  targetModule.config = appConfig;
+  targetModule.load(channel, moduleConfig);
 })();

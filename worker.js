@@ -106,6 +106,7 @@ httpServer.listen(ipcPath);
       logger.error(error);
     }
   })();
-  
+
+  targetModule.options = config;
   targetModule.load(channel, config);
 })();

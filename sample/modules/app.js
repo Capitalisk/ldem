@@ -38,21 +38,27 @@ class AppModule {
   updateAppState(newAppState) {
     let {
       version,
-      minVersion,
+      os,
       protocolVersion,
-      networkId,
+      nonce,
+      height,
+      state,
+      broadhash,
       wsPort,
       httpPort
     } = this.appState;
     this.appState = {
       version,
-      minVersion,
+      os,
       protocolVersion,
-      networkId,
+      nonce,
+      height,
+      state,
+      broadhash,
       wsPort,
       httpPort,
       ...newAppState
-		};
+    };
     this.channel.publish('state:updated', this.appState);
   }
 
@@ -60,13 +66,16 @@ class AppModule {
     this.channel = channel;
     this.options = options;
     this.appState = {
-			version: options.version,
-			minVersion: options.minVersion,
-			protocolVersion: options.protocolVersion,
-			networkId: options.networkId,
-			wsPort: this.config.modules.network ? this.config.modules.network.wsPort : null,
-			httpPort: this.config.modules.network ? this.config.modules.http_api.httpPort : null,
-		};
+      version: options.version,
+      os: options.os,
+      protocolVersion: options.protocolVersion,
+      nonce: options.nonce,
+      height: options.height,
+      state: options.state,
+      broadhash: options.broadhash,
+      wsPort: this.config.modules.network ? this.config.modules.network.wsPort : null,
+      httpPort: this.config.modules.http_api ? this.config.modules.http_api.httpPort : null,
+    };
   }
 
   async unload() {}

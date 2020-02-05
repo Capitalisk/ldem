@@ -21,6 +21,9 @@ let dependentMap = {};
 (async () => {
   for (let moduleName of moduleList) {
     let moduleConfig = config.modules[moduleName];
+    if (!moduleConfig.modulePath) {
+      continue;
+    }
     let modulePath = path.join(CWD, moduleConfig.modulePath);
     let execOptions = {
       env: {...process.env},
@@ -76,7 +79,8 @@ let dependentMap = {};
     moduleProcesses[moduleName] = moduleProc;
   }
 
-  for (let moduleName of moduleList) {
+  let moduleProcNames = Object.keys(moduleProcesses);
+  for (let moduleName of moduleProcNames) {
     let moduleProc = moduleProcesses[moduleName];
     moduleProc.send({
       event: 'masterHandshake',

@@ -8,8 +8,9 @@ const fs = require('fs');
 const Logger = require('./logger');
 const argv = require('minimist')(process.argv.slice(2));
 
-const moduleName = argv.n;
-const modulePath = argv.p;
+const MODULE_NAME = argv.n;
+const MODULE_PATH = argv.p;
+
 const HANDSHAKE_TIMEOUT = 2000;
 const DEFAULT_MODULE_NAME = 'chain';
 
@@ -19,7 +20,7 @@ let logger = new Logger({
   process
 });
 
-let TargetModuleClass = require(modulePath);
+let TargetModuleClass = require(MODULE_PATH);
 let targetModule = new TargetModuleClass();
 let dependents = [];
 
@@ -27,7 +28,7 @@ function getUnixSocketPath(targetModuleName) {
   return `/tmp/ldex-${targetModuleName}.sock`;
 }
 
-let ipcPath = getUnixSocketPath(moduleName);
+let ipcPath = getUnixSocketPath(MODULE_NAME);
 try {
   fs.unlinkSync(ipcPath);
 } catch (error) {}
@@ -88,10 +89,10 @@ httpServer.listen(ipcPath);
   }
 
   let [masterHandshake] = result;
-  let {dependencies, dependents} = masterHandshake;
+  let {config, dependencies, dependents} = masterHandshake;
 
   let channel = new Channel({
-    moduleName,
+    moduleName: MODULE_NAME,
     dependencies,
     dependents,
     modulePathFunction: getUnixSocketPath,
@@ -105,6 +106,6 @@ httpServer.listen(ipcPath);
       logger.error(error);
     }
   })();
-
-  targetModule.load(channel);
+  
+  targetModule.load(channel, config);
 })();

@@ -3,12 +3,11 @@ const path = require('path');
 const eetase = require('eetase');
 const Logger = require('./logger');
 const argv = require('minimist')(process.argv.slice(2));
-const configPath = argv.c;
 
 const CWD = process.cwd();
 const HANDSHAKE_TIMEOUT = 2000;
 const WORKER_PATH = path.join(__dirname, 'worker.js');
-const CONFIG_PATH = path.join(CWD, configPath);
+const CONFIG_PATH = path.join(CWD, argv.c);
 
 const config = require(CONFIG_PATH);
 
@@ -36,6 +35,7 @@ let dependentMap = {};
     ];
     let moduleProc = fork(WORKER_PATH, process.argv.slice(2).concat(workerArgs), execOptions);
     eetase(moduleProc);
+    moduleProc.config = moduleConfig;
 
     (async () => {
       for await (let [error] of moduleProc.listener('error')) {
@@ -80,6 +80,7 @@ let dependentMap = {};
     let moduleProc = moduleProcesses[moduleName];
     moduleProc.send({
       event: 'masterHandshake',
+      config: moduleProc.config,
       dependencies: moduleProc.dependencies,
       dependents: dependentMap[moduleName] || []
     });

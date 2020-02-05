@@ -1,6 +1,7 @@
 class AppModule {
   constructor() {
     this.channel = null;
+    this.options = {};
     this.appState = {};
   }
 
@@ -19,7 +20,14 @@ class AppModule {
   get actions() {
     return {
       getComponentConfig: {
-        handler: async (action) => ({})
+        handler: async (action) => {
+          if (action.params === 'storage') {
+            return {
+              database: this.options.database
+            };
+          }
+          return {};
+        }
       },
       getApplicationState: {
         handler: async (action) => ({...this.appState})
@@ -39,6 +47,7 @@ class AppModule {
 
   async load(channel, options) {
     this.channel = channel;
+    this.options = options;
   }
 
   async unload() {}

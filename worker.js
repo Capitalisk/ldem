@@ -13,6 +13,7 @@ const MODULE_PATH = argv.p;
 const LOG_LEVEL = argv.l;
 
 const DEFAULT_MODULE_NAME = 'chain';
+const LISTENING_TIMEOUT = 2000;
 const HANDSHAKE_TIMEOUT = 2000;
 const SUBSCRIBE_TIMEOUT = 5000;
 
@@ -36,7 +37,7 @@ try {
   fs.unlinkSync(ipcPath);
 } catch (error) {}
 
-let httpServer = http.createServer();
+let httpServer = eetase(http.createServer());
 let agServer = socketClusterServer.attach(httpServer);
 
 (async () => {
@@ -78,6 +79,13 @@ let agServer = socketClusterServer.attach(httpServer);
 httpServer.listen(ipcPath);
 
 (async () => {
+  try {
+    await httpServer.listener('listening').once(LISTENING_TIMEOUT);
+  } catch (error) {
+    logger.error(error);
+    process.exit(1);
+  }
+
   process.send({
     event: 'workerHandshake',
     dependencies: targetModule.dependencies

@@ -9,6 +9,7 @@ class Channel extends AsyncStreamEmitter {
       moduleName,
       dependencies,
       dependents,
+      redirects,
       modulePathFunction,
       exchange,
       subscribeTimeout,
@@ -19,11 +20,15 @@ class Channel extends AsyncStreamEmitter {
     this.moduleName = moduleName;
     this.dependencies = dependencies || [];
     this.dependents = dependents;
+    this.redirects = redirects;
     this.clients = {};
     this.subscribeTimeout = subscribeTimeout;
     this._dependencyLookup = {};
 
     for (let dependencyName of this.dependencies) {
+      if (this.redirects[dependencyName] != null) {
+        dependencyName = this.redirects[dependencyName];
+      }
       this._dependencyLookup[dependencyName] = true;
       let client = socketClusterClient.create({
         protocolScheme: 'ws+unix',
@@ -116,6 +121,9 @@ class Channel extends AsyncStreamEmitter {
       let parts = command.split(':');
       targetModuleName = parts[0];
       targetCommand = parts.slice(1).join(':');
+    }
+    if (this.redirects[targetModuleName] != null) {
+      targetModuleName = this.redirects[targetModuleName];
     }
     return {targetModuleName, targetCommand};
   }

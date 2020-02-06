@@ -1,4 +1,7 @@
 {
+  "redirects": {
+    "interchain": "app"
+  },
   "modules": {
     "app": {
       "modulePath": "node_modules/leasehold-app",

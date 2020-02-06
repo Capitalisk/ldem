@@ -24,9 +24,13 @@ Object.values(appConfig.modules).forEach((moduleConfig) => {
   }
 });
 
-const config = {
+let config = {
   ...defaultConfig,
   ...appConfig,
+  redirects: {
+    ...defaultConfig.redirects,
+    ...appConfig.redirects
+  },
   modules: {
     ...defaultConfig.modules,
     ...appConfig.modules
@@ -81,9 +85,15 @@ let dependentMap = {};
       moduleProc.dependencies = moduleList.filter(mod => mod !== moduleName);
     } else {
       for (let dependencyName of workerHandshake.dependencies) {
-        if (!moduleSet.has(dependencyName)) {
+        let targetDependencyName;
+        if (config.redirects[dependencyName] == null) {
+          targetDependencyName = dependencyName;
+        } else {
+          targetDependencyName = config.redirects[dependencyName];
+        }
+        if (!moduleSet.has(targetDependencyName)) {
           let error = new Error(
-            `Could not find a dependency ${dependencyName} required by the ${moduleName} module`
+            `Could not find the ${dependencyName} dependency target required by the ${moduleName} module`
           );
           logger.error(error);
           process.exit(1);

@@ -12,9 +12,8 @@ const MODULE_NAME = argv.n;
 const MODULE_PATH = argv.p;
 const LOG_LEVEL = argv.l;
 
-const HANDSHAKE_TIMEOUT = 2000;
 const DEFAULT_MODULE_NAME = 'chain';
-
+const HANDSHAKE_TIMEOUT = 2000;
 const SUBSCRIBE_TIMEOUT = 5000;
 
 let logger = new Logger({
@@ -99,6 +98,7 @@ httpServer.listen(ipcPath);
     moduleName: MODULE_NAME,
     dependencies,
     dependents,
+    redirects: appConfig.redirects,
     modulePathFunction: getUnixSocketPath,
     exchange: agServer.exchange,
     subscribeTimeout: SUBSCRIBE_TIMEOUT,

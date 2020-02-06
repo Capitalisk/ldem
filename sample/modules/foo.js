@@ -17,7 +17,7 @@ class FooModule {
 
   async load(channel, options) {
     console.log('Loading foo module... Options:', options);
-    await channel.invoke('interchain:updateModuleState', { // TODO 222 test interchain redirect
+    await channel.invoke('interchain:updateModuleState', {
       foo: {}
     });
     let applicationState = await channel.invoke('interchain:getApplicationState', {});

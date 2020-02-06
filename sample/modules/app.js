@@ -68,7 +68,7 @@ class AppModule {
     this.appState = {
       ...options.nodeInfo,
       wsPort: this.config.modules.network ? this.config.modules.network.wsPort : null,
-      httpPort: this.config.modules.http_api ? this.config.modules.http_api.httpPort : null,
+      httpPort: this.config.modules.http_api ? this.config.modules.http_api.httpPort : null // TODO 2: This depends on available chain modules.
     };
   }
 

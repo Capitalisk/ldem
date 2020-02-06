@@ -31,8 +31,124 @@
         "nethash": "da3ed6a45429278bac2666961289ca17ad86595d33b31037615d4b8e8f158bba"
       }
     },
+    "capitalisk": {
+      "database": "capitalisk_test",
+      "broadcasts": {
+        "active": true,
+        "broadcastInterval": 5000,
+        "releaseLimit": 25
+      },
+      "transactions": {
+        "maxTransactionsPerQueue": 1000
+      },
+      "forging": {
+        "force": false,
+        "delegates": []
+      },
+      "syncing": {
+        "active": true
+      },
+      "loading": {
+        "loadPerIteration": 5000,
+        "rebuildUpToRound": null
+      },
+      "constants": {
+        "EPOCH_TIME": "2016-05-24T17:00:00.000Z",
+        "BLOCK_TIME": 10,
+        "MAX_TRANSACTIONS_PER_BLOCK": 25,
+        "DELEGATE_LIST_ROUND_OFFSET": 2,
+        "REWARDS": {
+          "MILESTONES": [
+            "500000000",
+            "400000000",
+            "300000000",
+            "200000000",
+            "100000000"
+          ],
+          "OFFSET": 2160,
+          "DISTANCE": 3000000
+        },
+        "ACTIVE_DELEGATES": 101,
+        "BLOCK_SLOT_WINDOW": 5,
+        "BLOCK_RECEIPT_TIMEOUT": 20,
+        "FEES": {
+          "SEND": "10000000",
+          "VOTE": "100000000",
+          "SECOND_SIGNATURE": "500000000",
+          "DELEGATE": "2500000000",
+          "MULTISIGNATURE": "500000000",
+          "DAPP_REGISTRATION": "2500000000",
+          "DAPP_WITHDRAWAL": "10000000",
+          "DAPP_DEPOSIT": "10000000"
+        },
+        "MAX_PAYLOAD_LENGTH": 1048576,
+        "MAX_SHARED_TRANSACTIONS": 100,
+        "MAX_VOTES_PER_ACCOUNT": 101,
+        "TOTAL_AMOUNT": "10000000000000000",
+        "TRANSACTION_TYPES": {
+          "SEND": 0,
+          "SIGNATURE": 1,
+          "DELEGATE": 2,
+          "VOTE": 3,
+          "MULTI": 4,
+          "DAPP": 5,
+          "IN_TRANSFER": 6,
+          "OUT_TRANSFER": 7
+        },
+        "UNCONFIRMED_TRANSACTION_TIMEOUT": 10800,
+        "EXPIRY_INTERVAL": 30000
+      },
+      "exceptions": {
+        "blockRewards": [],
+        "senderPublicKey": [],
+        "signatures": [],
+        "signSignature": [],
+        "multisignatures": [],
+        "votes": [],
+        "inertTransactions": [],
+        "rounds": {},
+        "precedent": { "disableDappTransfer": 0, "disableDappTransaction": 0 },
+        "ignoreDelegateListCacheForRounds": [],
+        "blockVersions": {},
+        "roundVotes": [],
+        "recipientLeadingZero": {},
+        "recipientExceedingUint64": {},
+        "duplicatedSignatures": {},
+        "transactionWithNullByte": []
+      }
+    },
     "network": {
-      "wsPort": 7001
+      "wsPort": 7001,
+      "maxOutboundConnections": 40,
+      "maxInboundConnections": 100,
+      "seedPeers": [
+        {
+          "ip": "18.212.59.239",
+          "wsPort": 7001
+        },
+        {
+          "ip": "3.93.232.78",
+          "wsPort": 7001
+        },
+        {
+          "ip": "testnet-seed-03.lisk.io",
+          "wsPort": 7001
+        },
+        {
+          "ip": "testnet-seed-04.lisk-nodes.net",
+          "wsPort": 7001
+        },
+        {
+          "ip": "testnet-seed-05.lisk.io",
+          "wsPort": 7001
+        }
+      ],
+      "fixedPeers": [
+        {
+          "ip": "18.212.59.239",
+          "wsPort": 7001
+        }
+      ]
     },
     "http_api": {
       "httpPort": 7000

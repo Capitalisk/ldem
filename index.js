@@ -83,8 +83,8 @@ let dependentMap = {};
     let moduleProc = moduleProcesses[moduleName];
     moduleProc.send({
       event: 'masterHandshake',
-      moduleConfig: moduleProc.moduleConfig,
       appConfig: config,
+      moduleConfig: moduleProc.moduleConfig,
       dependencies: moduleProc.dependencies,
       dependents: dependentMap[moduleName] || []
     });

@@ -113,5 +113,10 @@ httpServer.listen(ipcPath);
 
   targetModule.options = moduleConfig;
   targetModule.config = appConfig;
-  targetModule.load(channel, moduleConfig, logger);
+  try {
+    await targetModule.load(channel, moduleConfig, logger);
+  } catch (error) {
+    logger.error(error);
+    process.exit(1);
+  }
 })();

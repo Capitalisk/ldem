@@ -11,11 +11,9 @@ const argv = require('minimist')(process.argv.slice(2));
 const MODULE_NAME = argv.n;
 const MODULE_PATH = argv.p;
 const LOG_LEVEL = argv.l;
+const IPC_TIMEOUT = argv.t;
 
 const DEFAULT_MODULE_NAME = 'chain';
-const LISTENING_TIMEOUT = 2000;
-const HANDSHAKE_TIMEOUT = 2000;
-const SUBSCRIBE_TIMEOUT = 5000;
 
 let logger = new Logger({
   process,
@@ -80,7 +78,7 @@ httpServer.listen(ipcPath);
 
 (async () => {
   try {
-    await httpServer.listener('listening').once(LISTENING_TIMEOUT);
+    await httpServer.listener('listening').once(IPC_TIMEOUT);
   } catch (error) {
     logger.error(error);
     process.exit(1);
@@ -93,7 +91,7 @@ httpServer.listen(ipcPath);
 
   let result;
   try {
-    result = await process.listener('message').once(HANDSHAKE_TIMEOUT);
+    result = await process.listener('message').once(IPC_TIMEOUT);
   } catch (error) {
     logger.error(error);
     process.exit(1);
@@ -109,7 +107,7 @@ httpServer.listen(ipcPath);
     redirects: appConfig.redirects,
     modulePathFunction: getUnixSocketPath,
     exchange: agServer.exchange,
-    subscribeTimeout: SUBSCRIBE_TIMEOUT,
+    subscribeTimeout: IPC_TIMEOUT,
     defaultTargetModuleName: DEFAULT_MODULE_NAME
   });
 

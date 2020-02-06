@@ -1,4 +1,5 @@
 {
+  "ipcTimeout": 10000,
   "defaultLogLevel": "debug",
   "redirects": {
     "interchain": "app"

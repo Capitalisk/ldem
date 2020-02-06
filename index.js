@@ -5,7 +5,7 @@ const Logger = require('./logger');
 const argv = require('minimist')(process.argv.slice(2));
 
 const CWD = process.cwd();
-const HANDSHAKE_TIMEOUT = 2000;
+const DEFAULT_IPC_TIMEOUT = 10000;
 const WORKER_PATH = path.join(__dirname, 'worker.js');
 const CONFIG_PATH = path.join(CWD, argv.c);
 
@@ -37,6 +37,8 @@ let config = {
   }
 };
 
+let ipcTimeout = config.ipcTimeout == null ? DEFAULT_IPC_TIMEOUT : config.ipcTimeout;
+
 Object.values(config.modules).forEach((moduleConfig) => {
   if (moduleConfig.logLevel == null) {
     moduleConfig.logLevel = config.defaultLogLevel;
@@ -66,7 +68,9 @@ let dependentMap = {};
       `-p`,
       moduleConfig.modulePath,
       '-l',
-      moduleConfig.logLevel || 'debug'
+      moduleConfig.logLevel || 'debug',
+      '-t',
+      ipcTimeout
     ];
     let moduleProc = fork(WORKER_PATH, process.argv.slice(2).concat(workerArgs), execOptions);
     eetase(moduleProc);
@@ -80,7 +84,7 @@ let dependentMap = {};
 
     let result;
     try {
-      result = await moduleProc.listener('message').once(HANDSHAKE_TIMEOUT);
+      result = await moduleProc.listener('message').once(ipcTimeout);
     } catch (error) {
       logger.error(error);
       process.exit(1);

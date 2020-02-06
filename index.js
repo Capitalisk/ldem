@@ -37,6 +37,12 @@ let config = {
   }
 };
 
+Object.values(config.modules).forEach((moduleConfig) => {
+  if (moduleConfig.logLevel == null) {
+    moduleConfig.logLevel = config.defaultLogLevel;
+  }
+});
+
 let logger = new Logger({
   processType: 'master'
 });

@@ -1,4 +1,5 @@
 {
+  "defaultLogLevel": "debug",
   "redirects": {
     "interchain": "app"
   },
@@ -8,14 +9,6 @@
       "mainHTTPAPIModule": "http_api",
       "mainNetworkModule": "leasehold_net",
       "database": "lisk_test",
-      "components": {
-        "logLevel": "debug",
-        "storage": {
-          "database": "lisk_test",
-          "logFileName": "logs/testnet/lisk_db.log"
-        },
-        "cache": {}
-      },
       "nodeInfo": {
         "version": "2.1.2",
         "protocolVersion": "1.1",
@@ -25,7 +18,6 @@
     "leasehold_net": {
       "modulePath": "node_modules/leasehold-net",
       "peerSelectionPluginPath": "../leasehold-interchain",
-      "logLevel": "debug",
       "wsPort": 7001,
       "maxOutboundConnections": 40,
       "maxInboundConnections": 100,

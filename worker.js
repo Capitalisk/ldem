@@ -10,6 +10,7 @@ const argv = require('minimist')(process.argv.slice(2));
 
 const MODULE_NAME = argv.n;
 const MODULE_PATH = argv.p;
+const LOG_LEVEL = argv.l;
 
 const HANDSHAKE_TIMEOUT = 2000;
 const DEFAULT_MODULE_NAME = 'chain';
@@ -17,8 +18,10 @@ const DEFAULT_MODULE_NAME = 'chain';
 const SUBSCRIBE_TIMEOUT = 5000;
 
 let logger = new Logger({
+  process,
   processType: 'worker',
-  process
+  moduleName: MODULE_NAME,
+  logLevel: LOG_LEVEL
 });
 
 let TargetModuleClass = require(MODULE_PATH);
@@ -110,5 +113,5 @@ httpServer.listen(ipcPath);
 
   targetModule.options = moduleConfig;
   targetModule.config = appConfig;
-  targetModule.load(channel, moduleConfig);
+  targetModule.load(channel, moduleConfig, logger);
 })();

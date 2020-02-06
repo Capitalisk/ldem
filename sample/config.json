@@ -6,15 +6,16 @@
     "two": {
       "modulePath": "sample/modules/two.js"
     },
+    "foo": {
+      "modulePath": "sample/modules/foo.js"
+    },
     "app": {
       "modulePath": "sample/modules/app.js",
+      "mainHTTPAPIModule": "http_api",
+      "mainNetworkModule": "leasehold_net",
       "database": "lisk_test",
       "components": {
-        "logger": {
-          "logFileName": "logs/testnet/lisk.log",
-          "fileLogLevel": "debug",
-          "consoleLogLevel": "debug"
-        },
+        "logLevel": "debug",
         "storage": {
           "database": "lisk_test",
           "logFileName": "logs/testnet/lisk_db.log"
@@ -116,39 +117,6 @@
         "duplicatedSignatures": {},
         "transactionWithNullByte": []
       }
-    },
-    "network": {
-      "wsPort": 7001,
-      "maxOutboundConnections": 40,
-      "maxInboundConnections": 100,
-      "seedPeers": [
-        {
-          "ip": "18.212.59.239",
-          "wsPort": 7001
-        },
-        {
-          "ip": "3.93.232.78",
-          "wsPort": 7001
-        },
-        {
-          "ip": "testnet-seed-03.lisk.io",
-          "wsPort": 7001
-        },
-        {
-          "ip": "testnet-seed-04.lisk-nodes.net",
-          "wsPort": 7001
-        },
-        {
-          "ip": "testnet-seed-05.lisk.io",
-          "wsPort": 7001
-        }
-      ],
-      "fixedPeers": [
-        {
-          "ip": "18.212.59.239",
-          "wsPort": 7001
-        }
-      ]
     },
     "http_api": {
       "httpPort": 7000

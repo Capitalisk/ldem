@@ -1,3 +1,39 @@
 {
-  "modules": {}
+  "modules": {
+    "leasehold_net": {
+      "modulePath": "node_modules/leasehold-net",
+      "logLevel": "error",
+      "wsPort": 7001,
+      "maxOutboundConnections": 40,
+      "maxInboundConnections": 100,
+      "seedPeers": [
+        {
+          "ip": "18.212.59.239",
+          "wsPort": 7001
+        },
+        {
+          "ip": "3.93.232.78",
+          "wsPort": 7001
+        },
+        {
+          "ip": "testnet-seed-03.lisk.io",
+          "wsPort": 7001
+        },
+        {
+          "ip": "testnet-seed-04.lisk-nodes.net",
+          "wsPort": 7001
+        },
+        {
+          "ip": "testnet-seed-05.lisk.io",
+          "wsPort": 7001
+        }
+      ],
+      "fixedPeers": [
+        {
+          "ip": "18.212.59.239",
+          "wsPort": 7001
+        }
+      ]
+    }
+  }
 }

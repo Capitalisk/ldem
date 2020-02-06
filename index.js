@@ -9,7 +9,29 @@ const HANDSHAKE_TIMEOUT = 2000;
 const WORKER_PATH = path.join(__dirname, 'worker.js');
 const CONFIG_PATH = path.join(CWD, argv.c);
 
-const config = require(CONFIG_PATH);
+const defaultConfig = require('./config/default.json');
+const appConfig = require(CONFIG_PATH);
+
+Object.values(defaultConfig.modules).forEach((moduleConfig) => {
+  if (moduleConfig.modulePath != null) {
+    moduleConfig.modulePath = path.join(__dirname, moduleConfig.modulePath);
+  }
+});
+
+Object.values(appConfig.modules).forEach((moduleConfig) => {
+  if (moduleConfig.modulePath != null) {
+    moduleConfig.modulePath = path.join(CWD, moduleConfig.modulePath);
+  }
+});
+
+const config = {
+  ...defaultConfig,
+  ...appConfig,
+  modules: {
+    ...defaultConfig.modules,
+    ...appConfig.modules
+  }
+};
 
 let logger = new Logger({
   processType: 'master'
@@ -23,7 +45,6 @@ let dependentMap = {};
 (async () => {
   for (let moduleName of moduleList) {
     let moduleConfig = config.modules[moduleName];
-    let modulePath = path.join(CWD, moduleConfig.modulePath);
     let execOptions = {
       env: {...process.env},
       execArgv: process.execArgv,
@@ -33,7 +54,9 @@ let dependentMap = {};
       '-n',
       moduleName,
       `-p`,
-      modulePath
+      moduleConfig.modulePath,
+      '-l',
+      moduleConfig.logLevel || 'debug'
     ];
     let moduleProc = fork(WORKER_PATH, process.argv.slice(2).concat(workerArgs), execOptions);
     eetase(moduleProc);

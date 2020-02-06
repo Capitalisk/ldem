@@ -13,8 +13,10 @@ class OneModule {
 
   get actions() {
     return {
-      handler: (action) => action.params.number + 1,
-      isPublic: true // TODO 2: Implement
+      doSomething: {
+        handler: (action) => action.params.number + 1,
+        isPublic: true // TODO 2: Implement
+      }
     };
   }
 

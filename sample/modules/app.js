@@ -65,10 +65,11 @@ class AppModule {
   async load(channel, options) {
     this.channel = channel;
     this.options = options;
+    let {mainHTTPAPIModule, mainNetworkModule} = options;
     this.appState = {
       ...options.nodeInfo,
-      wsPort: this.config.modules.network ? this.config.modules.network.wsPort : null,
-      httpPort: this.config.modules.http_api ? this.config.modules.http_api.httpPort : null // TODO 2: This depends on available chain modules.
+      wsPort: this.config.modules[mainNetworkModule].wsPort,
+      httpPort: this.config.modules[mainHTTPAPIModule].httpPort
     };
   }
 

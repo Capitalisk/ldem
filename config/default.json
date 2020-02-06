@@ -1,5 +1,24 @@
 {
   "modules": {
+    "app": {
+      "modulePath": "node_modules/leasehold-app",
+      "mainHTTPAPIModule": "http_api",
+      "mainNetworkModule": "leasehold_net",
+      "database": "lisk_test",
+      "components": {
+        "logLevel": "debug",
+        "storage": {
+          "database": "lisk_test",
+          "logFileName": "logs/testnet/lisk_db.log"
+        },
+        "cache": {}
+      },
+      "nodeInfo": {
+        "version": "2.1.2",
+        "protocolVersion": "1.1",
+        "nethash": "da3ed6a45429278bac2666961289ca17ad86595d33b31037615d4b8e8f158bba"
+      }
+    },
     "leasehold_net": {
       "modulePath": "node_modules/leasehold-net",
       "logLevel": "error",

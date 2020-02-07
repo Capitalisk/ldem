@@ -2,6 +2,7 @@ const fork = require('child_process').fork;
 const path = require('path');
 const eetase = require('eetase');
 const Logger = require('./logger');
+const objectAssignDeep = require('object-assign-deep');
 const argv = require('minimist')(process.argv.slice(2));
 
 const CWD = process.cwd();
@@ -24,18 +25,7 @@ Object.values(appConfig.modules).forEach((moduleConfig) => {
   }
 });
 
-let config = {
-  ...defaultConfig,
-  ...appConfig,
-  redirects: {
-    ...defaultConfig.redirects,
-    ...appConfig.redirects
-  },
-  modules: {
-    ...defaultConfig.modules,
-    ...appConfig.modules
-  }
-};
+let config = objectAssignDeep({}, defaultConfig, appConfig);
 
 let ipcTimeout = config.ipcTimeout == null ? DEFAULT_IPC_TIMEOUT : config.ipcTimeout;
 

@@ -1,5 +1,7 @@
 {
   "modules": {
+    "app": {},
+    "leasehold_net": {},
     "one": {
       "modulePath": "sample/modules/one.js"
     },

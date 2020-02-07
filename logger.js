@@ -21,54 +21,54 @@ class Logger {
     this.logLevel = LOG_LEVELS[options.logLevel];
   }
 
-  fatal(error) {
+  fatal(...args) {
     if (!this.process || this.process.connected) {
-      console.error(`[${Date.now()},FATAL,${this.processInfo}]`, error);
+      console.error.apply(console, [`[${Date.now()},FATAL,${this.processInfo}]`].concat(args));
     }
   }
 
-  error(error) {
+  error(...args) {
     if (this.logLevel < LOG_LEVELS.error) {
       return;
     }
     if (!this.process || this.process.connected) {
-      console.error(`[${Date.now()},ERROR,${this.processInfo}]`, error);
+      console.error.apply(console, [`[${Date.now()},ERROR,${this.processInfo}]`].concat(args));
     }
   }
 
-  warn(error) {
+  warn(...args) {
     if (this.logLevel < LOG_LEVELS.warn) {
       return;
     }
     if (!this.process || this.process.connected) {
-      console.warn(`[${Date.now()},WARN,${this.processInfo}]`, error);
+      console.error.apply(console, [`[${Date.now()},WARN,${this.processInfo}]`].concat(args));
     }
   }
 
-  info(message) {
+  info(...args) {
     if (this.logLevel < LOG_LEVELS.info) {
       return;
     }
     if (!this.process || this.process.connected) {
-      console.info(`[${Date.now()},INFO,${this.processInfo}]`, message);
+      console.info.apply(console, [`[${Date.now()},INFO,${this.processInfo}]`].concat(args));
     }
   }
 
-  debug(message) {
+  debug(...args) {
     if (this.logLevel < LOG_LEVELS.debug) {
       return;
     }
     if (!this.process || this.process.connected) {
-      console.debug(`[${Date.now()},DEBUG,${this.processInfo}]`, message);
+      console.debug.apply(console, [`[${Date.now()},DEBUG,${this.processInfo}]`].concat(args));
     }
   }
 
-  trace(message) {
+  trace(...args) {
     if (this.logLevel < LOG_LEVELS.trace) {
       return;
     }
     if (!this.process || this.process.connected) {
-      console.trace(`[${Date.now()},TRACE,${this.processInfo}]`, message);
+      console.trace.apply(console, [`[${Date.now()},TRACE,${this.processInfo}]`].concat(args));
     }
   }
 }

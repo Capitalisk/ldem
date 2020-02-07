@@ -16,7 +16,7 @@
   "license": "GPL-3.0",
   "dependencies": {
     "eetase": "^3.0.2",
-    "leasehold-app": "^1.0.4",
+    "leasehold-app": "^1.0.5",
     "leasehold-interchain": "^1.0.1",
     "leasehold-net": "^1.0.1",
     "minimist": "^1.2.0",

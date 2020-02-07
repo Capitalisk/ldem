@@ -46,13 +46,14 @@ Object.values(config.modules).forEach((moduleConfig) => {
 });
 
 let logger = new Logger({
-  processType: 'master'
+  processType: 'master',
+  logLevel: config.defaultLogLevel || 'debug'
 });
-let moduleProcesses = {};
 
 let moduleList = Object.keys(config.modules).filter(moduleName => !!config.modules[moduleName].modulePath);
 let moduleSet = new Set(moduleList);
 let dependentMap = {};
+let moduleProcesses = {};
 
 (async () => {
   for (let moduleName of moduleList) {
@@ -74,6 +75,7 @@ let dependentMap = {};
     ];
     let moduleProc = fork(WORKER_PATH, process.argv.slice(2).concat(workerArgs), execOptions);
     eetase(moduleProc);
+    moduleProc.moduleName = moduleName;
     moduleProc.moduleConfig = moduleConfig;
 
     (async () => {
@@ -92,7 +94,8 @@ let dependentMap = {};
     let [workerHandshake] = result;
     // If module does not specify dependencies, assume it depends on all other modules.
     if (workerHandshake.dependencies == null) {
-      moduleProc.dependencies = moduleList.filter(mod => mod !== moduleName);
+      // Use Set to guarantee uniqueness.
+      moduleProc.dependencies = [...new Set(moduleList.filter(mod => mod !== moduleName))];
     } else {
       for (let dependencyName of workerHandshake.dependencies) {
         let targetDependencyName;
@@ -109,27 +112,77 @@ let dependentMap = {};
           process.exit(1);
         }
       }
-      moduleProc.dependencies = workerHandshake.dependencies;
+      // Use Set to guarantee uniqueness.
+      moduleProc.dependencies = [...new Set(workerHandshake.dependencies)];
     }
+
+    let targetDependencies = moduleProc.dependencies.map(
+      dep => config.redirects[dep] == null ? dep : config.redirects[dep]
+    );
+    // This accounts for redirects.
+    moduleProc.targetDependencies = [...new Set(targetDependencies)];
+
     for (let dep of moduleProc.dependencies) {
       if (!dependentMap[dep]) {
         dependentMap[dep] = [];
       }
       dependentMap[dep].push(moduleName);
     }
-
     moduleProcesses[moduleName] = moduleProc;
   }
 
   let moduleProcNames = Object.keys(moduleProcesses);
+  let visitedModulesSet = new Set();
+  let modulesWithoutDependencies = [];
+
   for (let moduleName of moduleProcNames) {
+    let moduleProc = moduleProcesses[moduleName];
+    moduleProc.dependents = dependentMap[moduleName] || [];
+    if (!moduleProc.dependencies.length) {
+      modulesWithoutDependencies.push(moduleName);
+    }
+  }
+
+  let orderedProcNames = [];
+  let currentLayer = [...modulesWithoutDependencies];
+  let unvisitedModuleSet = new Set(moduleProcNames);
+
+  while (currentLayer.length) {
+    let nextLayerSet = new Set();
+    for (let moduleName of currentLayer) {
+      let moduleProc = moduleProcesses[moduleName];
+      let isReady = moduleProc.targetDependencies.every(dep => visitedModulesSet.has(dep));
+      if (isReady) {
+        orderedProcNames.push(moduleName);
+        visitedModulesSet.add(moduleName);
+        unvisitedModuleSet.delete(moduleName);
+        for (let dependent of moduleProc.dependents) {
+          nextLayerSet.add(dependent);
+        }
+      }
+    }
+    currentLayer = [...nextLayerSet];
+  }
+
+  if (unvisitedModuleSet.size) {
+    logger.debug(
+      `Identified circular dependencies: ${[...unvisitedModuleSet].join(', ')}`
+    );
+  }
+
+  // Circular dependencies will be instantiated in any order.
+  for (let unvisitedModuleName of unvisitedModuleSet) {
+    orderedProcNames.push(unvisitedModuleName);
+  }
+
+  for (let moduleName of orderedProcNames) {
     let moduleProc = moduleProcesses[moduleName];
     moduleProc.send({
       event: 'masterHandshake',
       appConfig: config,
       moduleConfig: moduleProc.moduleConfig,
       dependencies: moduleProc.dependencies,
-      dependents: dependentMap[moduleName] || []
+      dependents: moduleProc.dependents
     });
   }
 })();

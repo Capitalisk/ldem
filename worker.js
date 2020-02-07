@@ -26,6 +26,8 @@ let TargetModuleClass = require(MODULE_PATH);
 let targetModule = new TargetModuleClass();
 let dependents = [];
 
+let targetModuleDependencies = targetModule.dependencies || TargetModuleClass.dependencies;
+
 function getUnixSocketPath(targetModuleName) {
   return `/tmp/ldex-${targetModuleName}.sock`;
 }
@@ -86,7 +88,7 @@ httpServer.listen(ipcPath);
 
   process.send({
     event: 'workerHandshake',
-    dependencies: targetModule.dependencies
+    dependencies: targetModuleDependencies
   });
 
   let result;

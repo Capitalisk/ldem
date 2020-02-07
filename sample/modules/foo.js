@@ -4,7 +4,7 @@ class FooModule {
   }
 
   get dependencies() {
-    return ['interchain', 'leasehold_net'];
+    return ['interchain', 'network'];
   }
 
   get events() {
@@ -24,7 +24,7 @@ class FooModule {
     console.log('APPLICATION STATE:', applicationState);
 
     setInterval(async () => {
-      let result = await channel.invoke('leasehold_net:getConnectedPeers', {});
+      let result = await channel.invoke('network:getConnectedPeers', {});
       console.log('CONNECTED PEERS:', result.length, result.map(peerInfo => peerInfo.ipAddress));
     }, 1000);
   }

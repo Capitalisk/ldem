@@ -2,10 +2,12 @@
   "ipcTimeout": 10000,
   "defaultLogLevel": "debug",
   "redirects": {
-    "interchain": "app"
+    "app": "leasehold_app",
+    "network": "leasehold_net",
+    "interchain": "leasehold_app"
   },
   "modules": {
-    "app": {
+    "leasehold_app": {
       "modulePath": "node_modules/leasehold-app",
       "mainHTTPAPIModule": "http_api",
       "mainNetworkModule": "leasehold_net",

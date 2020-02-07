@@ -22,9 +22,10 @@ class TwoModule {
   async load(channel, options) {
     console.log('Loading module two... Options:', options);
 
-    channel.subscribe('one:testEvent', async (data) => {
+    let handler = async (data) => {
       console.log('Module two received event from module one:', data);
-    });
+    };
+    channel.subscribe('one:testEvent', handler);
 
     let result = await channel.invoke('one:doSomething', {number: 1});
     console.log('one:doSomething result:', result);

@@ -61,9 +61,19 @@ class Channel extends AsyncStreamEmitter {
       throw error;
     }
     let channelObject = this.clients[targetModuleName].subscribe(channel);
+    let channelDataConsumer = channelObject.createConsumer();
+    handler.channelOutputConsumerId = channelDataConsumer.id;
+
     (async () => {
-      for await (let event of channelObject) {
-        await handler(event);
+      while (true) {
+        let packet = await channelDataConsumer.next();
+        if (packet.done) break;
+        let event = packet.value;
+        try {
+          await handler(event);
+        } catch (error) {
+          this.emit('error', {error});
+        }
       }
     })();
     return channelObject.listener('subscribe').once(this.subscribeTimeout);
@@ -85,8 +95,24 @@ class Channel extends AsyncStreamEmitter {
       throw error;
     }
     let targetClient = this.clients[targetModuleName];
-    let channelObject = targetClient.unsubscribe(channel);
-    targetClient.closeChannel(channel);
+    let targetChannel = targetClient.channel(channel);
+    if (targetChannel) {
+      let consumerCount = targetChannel.getOutputConsumerStatsList().length;
+      targetChannel.killOutputConsumer(handler.channelOutputConsumerId);
+      let consumerStats = targetChannel.getOutputConsumerStatsList();
+      if (consumerCount <= 1) {
+        targetChannel.unsubscribe();
+        targetChannel.close();
+      }
+    }
+  }
+
+  async once(channel, handler) {
+    let onceHandler = async () => {
+      await handler();
+      this.unsubscribe(channel, onceHandler);
+    };
+    this.subscribe(channel, onceHandler);
   }
 
   publish(channel, data) {

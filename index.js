@@ -14,6 +14,7 @@ const defaultConfig = require('./config/default.json');
 const appConfig = require(CONFIG_PATH);
 
 // "mainHTTPAPIModule": "http_api", // TODO 2 in default config should be leasehold_http_api, also npm install --save
+// TODO 2: Handle worker crashes/restarts.
 
 Object.values(defaultConfig.modules).forEach((moduleConfig) => {
   if (moduleConfig.modulePath != null) {

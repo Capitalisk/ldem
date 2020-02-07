@@ -9,7 +9,6 @@
       "modulePath": "node_modules/leasehold-app",
       "mainHTTPAPIModule": "http_api",
       "mainNetworkModule": "leasehold_net",
-      "database": "lisk_test",
       "nodeInfo": {
         "version": "2.1.2",
         "protocolVersion": "1.1",

@@ -174,6 +174,9 @@ let moduleProcesses = {};
   for (let unvisitedModuleName of unvisitedModuleSet) {
     orderedProcNames.push(unvisitedModuleName);
   }
+  logger.debug(
+    `Module loading order: ${orderedProcNames.join(', ')}`
+  );
 
   for (let moduleName of orderedProcNames) {
     let moduleProc = moduleProcesses[moduleName];

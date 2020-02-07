@@ -114,7 +114,7 @@ let moduleProcesses = {};
     // This accounts for redirects.
     moduleProc.targetDependencies = [...new Set(targetDependencies)];
 
-    for (let dep of moduleProc.dependencies) {
+    for (let dep of moduleProc.targetDependencies) {
       if (!dependentMap[dep]) {
         dependentMap[dep] = [];
       }
@@ -130,7 +130,7 @@ let moduleProcesses = {};
   for (let moduleName of moduleProcNames) {
     let moduleProc = moduleProcesses[moduleName];
     moduleProc.dependents = dependentMap[moduleName] || [];
-    if (!moduleProc.dependencies.length) {
+    if (!moduleProc.targetDependencies.length) {
       modulesWithoutDependencies.push(moduleName);
     }
   }

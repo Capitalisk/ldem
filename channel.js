@@ -97,10 +97,9 @@ class Channel extends AsyncStreamEmitter {
     let targetClient = this.clients[targetModuleName];
     let targetChannel = targetClient.channel(channel);
     if (targetChannel) {
-      let consumerCount = targetChannel.getOutputConsumerStatsList().length;
       targetChannel.killOutputConsumer(handler.channelOutputConsumerId);
-      let consumerStats = targetChannel.getOutputConsumerStatsList();
-      if (consumerCount <= 1) {
+      let consumerCount = targetChannel.getOutputConsumerStatsList().length;
+      if (consumerCount <= 0) {
         targetChannel.unsubscribe();
         targetChannel.close();
       }

@@ -15,13 +15,13 @@
   "author": "Jonathan Gros-Dubois",
   "license": "GPL-3.0",
   "dependencies": {
-    "eetase": "^3.0.2",
+    "eetase": "^4.0.0",
     "leasehold-app": "^1.0.5",
     "leasehold-interchain": "^1.0.1",
     "leasehold-net": "^1.0.1",
     "minimist": "^1.2.0",
     "object-assign-deep": "^0.4.0",
-    "socketcluster-client": "^15.1.0",
-    "socketcluster-server": "^15.0.1"
+    "socketcluster-client": "^16.0.1",
+    "socketcluster-server": "^16.0.0"
   }
 }

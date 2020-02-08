@@ -39,6 +39,7 @@ Object.values(config.modules).forEach((moduleConfig) => {
 });
 
 let logger = new Logger({
+  process,
   processType: 'master',
   logLevel: config.defaultLogLevel || 'debug'
 });
@@ -150,7 +151,9 @@ let moduleProcesses = {};
         visitedModulesSet.add(moduleName);
         unvisitedModuleSet.delete(moduleName);
         for (let dependent of moduleProc.dependents) {
-          nextLayerSet.add(dependent);
+          if (!visitedModulesSet.has(dependent)) {
+            nextLayerSet.add(dependent);
+          }
         }
       }
     }

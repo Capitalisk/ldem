@@ -126,7 +126,6 @@ let moduleProcesses = {};
   }
 
   let moduleProcNames = Object.keys(moduleProcesses);
-  let visitedModulesSet = new Set();
   let modulesWithoutDependencies = [];
 
   for (let moduleName of moduleProcNames) {
@@ -139,7 +138,7 @@ let moduleProcesses = {};
 
   let orderedProcNames = [];
   let currentLayer = [...modulesWithoutDependencies];
-  let unvisitedModuleSet = new Set(moduleProcNames);
+  let visitedModulesSet = new Set(currentLayer);
 
   while (currentLayer.length) {
     let nextLayerSet = new Set();
@@ -149,7 +148,6 @@ let moduleProcesses = {};
       if (isReady) {
         orderedProcNames.push(moduleName);
         visitedModulesSet.add(moduleName);
-        unvisitedModuleSet.delete(moduleName);
         for (let dependent of moduleProc.dependents) {
           if (!visitedModulesSet.has(dependent)) {
             nextLayerSet.add(dependent);
@@ -158,6 +156,14 @@ let moduleProcesses = {};
       }
     }
     currentLayer = [...nextLayerSet];
+  }
+
+  let unvisitedModuleSet = new Set();
+
+  for (let moduleName of moduleProcNames) {
+    if (!visitedModulesSet.has(moduleName)) {
+      unvisitedModuleSet.add(moduleName);
+    }
   }
 
   if (unvisitedModuleSet.size) {

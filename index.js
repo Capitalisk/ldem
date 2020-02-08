@@ -148,6 +148,7 @@ let moduleProcesses = {};
       if (isReady) {
         orderedProcNames.push(moduleName);
         visitedModulesSet.add(moduleName);
+        nextLayerSet.delete(moduleName);
         for (let dependent of moduleProc.dependents) {
           if (!visitedModulesSet.has(dependent)) {
             nextLayerSet.add(dependent);

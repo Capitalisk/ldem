@@ -77,6 +77,10 @@ class Channel extends AsyncStreamEmitter {
       }
     })();
 
+    if (channelObject.state === channelObject.SUBSCRIBED) {
+      return;
+    }
+
     try {
       await channelObject.listener('subscribe').once(this.subscribeTimeout);
     } catch (err) {

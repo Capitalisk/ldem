@@ -128,7 +128,7 @@ httpServer.listen(ipcPath);
   }
 
   targetModule.options = objectAssignDeep({}, defaultModuleOptions, moduleConfig);
-  targetModule.config = appConfig; // TODO 22 rename to appConfig also in leasehold-app
+  targetModule.appConfig = appConfig;
   try {
     await targetModule.load(channel, targetModule.options, logger);
   } catch (error) {

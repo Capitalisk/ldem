@@ -76,7 +76,24 @@ class Channel extends AsyncStreamEmitter {
         }
       }
     })();
-    return channelObject.listener('subscribe').once(this.subscribeTimeout);
+
+    try {
+      await channelObject.listener('subscribe').once(this.subscribeTimeout);
+    } catch (err) {
+      let error = new Error(
+        `Subscription to the ${
+          channel
+        } channel of the ${
+          targetModuleName
+        } module by the ${
+          this.moduleName
+        } module timed out after ${
+          this.subscribeTimeout
+        } milliseconds`
+      );
+      error.name = 'SubscribeTimeOutError';
+      throw error;
+    }
   }
 
   unsubscribe(channel, handler) {

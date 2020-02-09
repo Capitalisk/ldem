@@ -24,8 +24,9 @@ class FooModule {
     console.log('APPLICATION STATE:', applicationState);
 
     setInterval(async () => {
-      let result = await channel.invoke('network:getConnectedPeers', {});
-      console.log('CONNECTED PEERS:', result.length, result.map(peerInfo => peerInfo.ipAddress));
+      let result = await channel.invoke('network:getPeers', {});
+      let connectedPeers = result.filter(peerInfo => peerInfo.state === 2).map(peerInfo => peerInfo.ip);
+      console.log('CONNECTED PEERS:', connectedPeers.length, connectedPeers);
     }, 1000);
   }
 

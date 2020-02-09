@@ -9,13 +9,11 @@ const LOG_LEVELS = {
 
 class Logger {
   constructor(options = {}) {
-    this.process = options.process;
     this.moduleName = options.moduleName;
     this.isMasterProcess = options.processType === 'master';
     this.processInfo = options.processType;
-    if (this.process) {
-      this.processInfo += `,${this.process.pid}`;
-    }
+    this.processStream = options.processStream;
+    this.processInfo += `,${this.processStream.pid}`;
     if (this.moduleName) {
       this.processInfo += `,${this.moduleName}`;
     }
@@ -23,7 +21,7 @@ class Logger {
   }
 
   fatal(...args) {
-    if (!this.process || this.process.connected || this.isMasterProcess) {
+    if (this.processStream.connected || this.isMasterProcess) {
       console.error.apply(console, [`[${Date.now()},FATAL,${this.processInfo}]`].concat(args));
     }
   }
@@ -32,7 +30,7 @@ class Logger {
     if (this.logLevel < LOG_LEVELS.error) {
       return;
     }
-    if (!this.process || this.process.connected || this.isMasterProcess) {
+    if (this.processStream.connected || this.isMasterProcess) {
       console.error.apply(console, [`[${Date.now()},ERROR,${this.processInfo}]`].concat(args));
     }
   }
@@ -41,7 +39,7 @@ class Logger {
     if (this.logLevel < LOG_LEVELS.warn) {
       return;
     }
-    if (!this.process || this.process.connected || this.isMasterProcess) {
+    if (this.processStream.connected || this.isMasterProcess) {
       console.error.apply(console, [`[${Date.now()},WARN,${this.processInfo}]`].concat(args));
     }
   }
@@ -50,7 +48,7 @@ class Logger {
     if (this.logLevel < LOG_LEVELS.info) {
       return;
     }
-    if (!this.process || this.process.connected || this.isMasterProcess) {
+    if (this.processStream.connected || this.isMasterProcess) {
       console.info.apply(console, [`[${Date.now()},INFO,${this.processInfo}]`].concat(args));
     }
   }
@@ -59,7 +57,7 @@ class Logger {
     if (this.logLevel < LOG_LEVELS.debug) {
       return;
     }
-    if (!this.process || this.process.connected || this.isMasterProcess) {
+    if (this.processStream.connected || this.isMasterProcess) {
       console.debug.apply(console, [`[${Date.now()},DEBUG,${this.processInfo}]`].concat(args));
     }
   }
@@ -68,7 +66,7 @@ class Logger {
     if (this.logLevel < LOG_LEVELS.trace) {
       return;
     }
-    if (!this.process || this.process.connected || this.isMasterProcess) {
+    if (this.processStream.connected || this.isMasterProcess) {
       console.trace.apply(console, [`[${Date.now()},TRACE,${this.processInfo}]`].concat(args));
     }
   }

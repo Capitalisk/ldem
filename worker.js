@@ -16,20 +16,22 @@ const IPC_TIMEOUT = argv.t;
 const DEFAULT_MODULE_NAME = 'chain';
 
 let logger = new Logger({
-  process,
+  processStream: process,
   processType: 'worker',
   moduleName: MODULE_NAME,
   logLevel: LOG_LEVEL
 });
 
 let TargetModuleClass = require(MODULE_PATH);
-let targetModule = new TargetModuleClass();
+let targetModule = new TargetModuleClass({
+  processStream: process
+});
 let dependents = [];
 
 let targetModuleDependencies = targetModule.dependencies || TargetModuleClass.dependencies;
 
-function getUnixSocketPath(targetModuleName) {
-  return `/tmp/ldex-${targetModuleName}.sock`;
+function getUnixSocketPath(moduleName) {
+  return `/tmp/ldex-${moduleName}.sock`;
 }
 
 let ipcPath = getUnixSocketPath(MODULE_NAME);
@@ -127,4 +129,8 @@ httpServer.listen(ipcPath);
     logger.error(error);
     process.exit(1);
   }
+
+  process.send({
+    event: 'moduleReady'
+  });
 })();

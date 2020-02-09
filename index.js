@@ -39,7 +39,7 @@ Object.values(config.modules).forEach((moduleConfig) => {
 });
 
 let logger = new Logger({
-  process,
+  processStream: process,
   processType: 'master',
   logLevel: config.defaultLogLevel || 'debug'
 });
@@ -191,4 +191,24 @@ let moduleProcesses = {};
       dependents: moduleProc.dependents
     });
   }
+
+  let result;
+  try {
+    // Listen for the 'moduleReady' event.
+    await Promise.all(
+      Object.values(moduleProcesses).map(async (moduleProc) => {
+        return moduleProc.listener('message').once(ipcTimeout);
+      })
+    );
+    for (let moduleName of orderedProcNames) {
+      let moduleProc = moduleProcesses[moduleName];
+      moduleProc.send({
+        event: 'appReady'
+      });
+    }
+  } catch (error) {
+    logger.error(error);
+    process.exit(1);
+  }
+
 })();

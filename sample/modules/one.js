@@ -4,7 +4,7 @@ class OneModule {
   }
 
   get dependencies() {
-    return [];
+    return ['network'];
   }
 
   get events() {
@@ -15,7 +15,7 @@ class OneModule {
     return {
       doSomething: {
         handler: (action) => action.params.number + 1,
-        isPublic: true // TODO 2: Implement
+        isPublic: true
       }
     };
   }

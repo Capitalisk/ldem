@@ -1,6 +1,7 @@
 const Channel = require('./channel');
 const http = require('http');
 const objectAssignDeep = require('object-assign-deep');
+const querystring = require('querystring');
 const eetase = require('eetase');
 eetase(process);
 
@@ -15,6 +16,7 @@ const LOG_LEVEL = argv.l;
 const IPC_TIMEOUT = argv.t;
 
 const DEFAULT_MODULE_NAME = 'chain';
+const SOCKET_REPLACED_CODE = 4500;
 
 let logger = new Logger({
   processStream: process,
@@ -49,8 +51,62 @@ let agServer = socketClusterServer.attach(httpServer);
   }
 })();
 
+let inboundModuleSockets = {};
+let moduleActionNames = Object.keys(targetModule.actions);
+
+async function handleRPC(actionName, request) {
+  let moduleAction = targetModule.actions[actionName];
+  let isActionPublic = moduleAction.isPublic;
+  let moduleActionHandler = moduleAction.handler;
+
+  if (request.data.isPublic && !isActionPublic) {
+    let error = new Error(
+      `The ${
+        actionName
+      } action of the ${
+        MODULE_NAME
+      } module is not public`
+    );
+    request.error(error);
+    return;
+  }
+  let result;
+  try {
+    result = await moduleActionHandler({
+      params: request.data.params
+    });
+  } catch (error) {
+    logger.debug(error);
+    let rpcError = new Error(
+      `The ${actionName} action invoked on the ${
+        MODULE_NAME
+      } module failed because of the following error: ${error.message}`
+    );
+    rpcError.name = 'RPCError';
+    request.error(rpcError);
+    return;
+  }
+  request.end(result);
+}
+
 (async () => {
   for await (let {socket} of agServer.listener('connection')) {
+
+    let query = socket.request.url.split('?')[1];
+    let sourceModule = querystring.parse(query || '').source;
+    socket.sourceModule = sourceModule;
+    let existingModuleSocket = inboundModuleSockets[sourceModule];
+    if (existingModuleSocket) {
+      existingModuleSocket.disconnect(
+        SOCKET_REPLACED_CODE,
+        `Connection from module ${
+          sourceModule
+        } to module ${
+          MODULE_NAME
+        } was replaced by a newer connection`
+      );
+    }
+    inboundModuleSockets[sourceModule] = socket;
 
     (async () => {
       for await (let {error} of socket.listener('error')) {
@@ -58,23 +114,20 @@ let agServer = socketClusterServer.attach(httpServer);
       }
     })();
 
-    let moduleActionNames = Object.keys(targetModule.actions);
     for (let actionName of moduleActionNames) {
-      let moduleActionHandler = targetModule.actions[actionName].handler;
       (async () => {
         for await (let request of socket.procedure(actionName)) {
-          let result;
-          try {
-            result = await moduleActionHandler({
-              params: request.data
-            });
-          } catch (error) {
-            request.error(error);
-            continue;
-          }
-          request.end(result);
+          await handleRPC(actionName, request);
         }
       })();
+    }
+  }
+})();
+
+(async () => {
+  for await (let {socket, code} of agServer.listener('disconnection')) {
+    if (code !== SOCKET_REPLACED_CODE) {
+      delete inboundModuleSockets[socket.sourceModule];
     }
   }
 })();
@@ -107,11 +160,13 @@ httpServer.listen(ipcPath);
 
   let channel = new Channel({
     moduleName: MODULE_NAME,
+    moduleActions: moduleActionNames,
     dependencies,
     dependents,
     redirects: appConfig.redirects,
     modulePathFunction: getUnixSocketPath,
     exchange: agServer.exchange,
+    inboundModuleSockets,
     subscribeTimeout: IPC_TIMEOUT,
     defaultTargetModuleName: DEFAULT_MODULE_NAME
   });
@@ -119,6 +174,12 @@ httpServer.listen(ipcPath);
   (async () => {
     for await (let {error} of channel.listener('error')) {
       logger.error(error);
+    }
+  })();
+
+  (async () => {
+    for await (let {action, request} of channel.listener('rpc')) {
+      await handleRPC(action, request);
     }
   })();
 

@@ -7,11 +7,13 @@ class Channel extends AsyncStreamEmitter {
 
     let {
       moduleName,
+      moduleActions,
       dependencies,
       dependents,
       redirects,
       modulePathFunction,
       exchange,
+      inboundModuleSockets,
       subscribeTimeout,
       defaultTargetModuleName
     } = options;
@@ -22,7 +24,9 @@ class Channel extends AsyncStreamEmitter {
     this.dependents = dependents;
     this.redirects = redirects;
     this.clients = {};
+    this.inboundModuleSockets = inboundModuleSockets;
     this.subscribeTimeout = subscribeTimeout;
+    this.moduleActions = moduleActions;
     this._dependencyLookup = {};
 
     for (let dependencyName of this.dependencies) {
@@ -32,7 +36,8 @@ class Channel extends AsyncStreamEmitter {
       this._dependencyLookup[dependencyName] = true;
       let client = socketClusterClient.create({
         protocolScheme: 'ws+unix',
-        socketPath: modulePathFunction(dependencyName)
+        socketPath: modulePathFunction(dependencyName),
+        query: {source: moduleName}
       });
 
       (async () => {
@@ -40,6 +45,17 @@ class Channel extends AsyncStreamEmitter {
           this.emit('error', {error});
         }
       })();
+
+      for (let action of this.moduleActions) {
+        (async () => {
+          for await (let request of client.procedure(action)) {
+            this.emit('rpc', {
+              action,
+              request
+            });
+          }
+        })();
+      }
 
       this.clients[dependencyName] = client;
     }
@@ -158,7 +174,35 @@ class Channel extends AsyncStreamEmitter {
       error.name = 'InvalidTargetModuleError';
       throw error;
     }
-    return this.clients[targetModuleName].invoke(locator, data);
+    let invokePacket = {
+      isPublic: false,
+      params: data
+    };
+    let targetSocket = this.clients[targetModuleName];
+    return targetSocket.invoke(locator, invokePacket);
+  }
+
+  async invokePublic(action, data) {
+    let {targetModuleName, locator} = this._getLocatorParts(action);
+    let targetSocket = this.clients[targetModuleName] || this.inboundModuleSockets[targetModuleName];
+    if (!targetSocket) {
+      let error = new Error(
+        `Cannot invoke public action ${
+          action
+        } on the ${
+          targetModuleName
+        } module because it is not connected to the ${
+          this.moduleName
+        } module as either a dependent or dependency`
+      );
+      error.name = 'UnreachableTargetModuleError';
+      throw error;
+    }
+    let invokePacket = {
+      isPublic: true,
+      params: data
+    };
+    return targetSocket.invoke(locator, invokePacket);
   }
 
   _getTargetChannel(channel) {

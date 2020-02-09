@@ -46,7 +46,8 @@ class Channel extends AsyncStreamEmitter {
   }
 
   async subscribe(channel, handler) {
-    let {targetModuleName} = this._getCommandParts(channel);
+    let {targetModuleName, locator} = this._getLocatorParts(channel);
+    let targetChannel = this._computeTargetChannel(targetModuleName, locator);
     if (!this._dependencyLookup[targetModuleName]) {
       let error = new Error(
         `Cannot subscribe to the ${
@@ -60,7 +61,7 @@ class Channel extends AsyncStreamEmitter {
       error.name = 'InvalidTargetModuleError';
       throw error;
     }
-    let channelObject = this.clients[targetModuleName].subscribe(channel);
+    let channelObject = this.clients[targetModuleName].subscribe(targetChannel);
     let channelDataConsumer = channelObject.createConsumer();
     handler.channelOutputConsumerId = channelDataConsumer.id;
 
@@ -101,7 +102,8 @@ class Channel extends AsyncStreamEmitter {
   }
 
   unsubscribe(channel, handler) {
-    let {targetModuleName} = this._getCommandParts(channel);
+    let {targetModuleName, locator} = this._getLocatorParts(channel);
+    let targetChannel = this._computeTargetChannel(targetModuleName, locator);
     if (!this._dependencyLookup[targetModuleName]) {
       let error = new Error(
         `Cannot unsubscribe from the ${
@@ -116,31 +118,33 @@ class Channel extends AsyncStreamEmitter {
       throw error;
     }
     let targetClient = this.clients[targetModuleName];
-    let targetChannel = targetClient.channel(channel);
-    if (targetChannel) {
-      targetChannel.killOutputConsumer(handler.channelOutputConsumerId);
-      let consumerCount = targetChannel.getOutputConsumerStatsList().length;
+    let channelObject = targetClient.channel(targetChannel);
+    if (channelObject) {
+      channelObject.killOutputConsumer(handler.channelOutputConsumerId);
+      let consumerCount = channelObject.getOutputConsumerStatsList().length;
       if (consumerCount <= 0) {
-        targetChannel.unsubscribe();
-        targetChannel.close();
+        channelObject.unsubscribe();
+        channelObject.close();
       }
     }
   }
 
   async once(channel, handler) {
+    let targetChannel = this._getTargetChannel(channel);
     let onceHandler = async () => {
       await handler();
-      this.unsubscribe(channel, onceHandler);
+      this.unsubscribe(targetChannel, onceHandler);
     };
-    this.subscribe(channel, onceHandler);
+    this.subscribe(targetChannel, onceHandler);
   }
 
   publish(channel, data) {
-    this.exchange.transmitPublish(channel, data);
+    let targetChannel = this._getTargetChannel(channel);
+    this.exchange.transmitPublish(targetChannel, data);
   }
 
   async invoke(action, data) {
-    let {targetModuleName, targetCommand} = this._getCommandParts(action);
+    let {targetModuleName, locator} = this._getLocatorParts(action);
     if (!this._dependencyLookup[targetModuleName]) {
       let error = new Error(
         `Cannot invoke action ${
@@ -154,24 +158,33 @@ class Channel extends AsyncStreamEmitter {
       error.name = 'InvalidTargetModuleError';
       throw error;
     }
-    return this.clients[targetModuleName].invoke(targetCommand, data);
+    return this.clients[targetModuleName].invoke(locator, data);
   }
 
-  _getCommandParts(command) {
+  _getTargetChannel(channel) {
+    let {targetModuleName, locator} = this._getLocatorParts(channel);
+    return this._computeTargetChannel(targetModuleName, locator);
+  }
+
+  _computeTargetChannel(targetModuleName, locator) {
+    return `${targetModuleName}:${locator}`;
+  }
+
+  _getLocatorParts(command) {
     let targetModuleName;
-    let targetCommand;
+    let locator;
     if (command.indexOf(':') === -1) {
       targetModuleName = this.defaultTargetModuleName;
-      targetCommand = command;
+      locator = command;
     } else {
       let parts = command.split(':');
       targetModuleName = parts[0];
-      targetCommand = parts.slice(1).join(':');
+      locator = parts.slice(1).join(':');
     }
     if (this.redirects[targetModuleName] != null) {
       targetModuleName = this.redirects[targetModuleName];
     }
-    return {targetModuleName, targetCommand};
+    return {targetModuleName, locator};
   }
 }
 

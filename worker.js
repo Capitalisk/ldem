@@ -29,7 +29,7 @@ let targetModule = new TargetModuleClass({
 });
 let dependents = [];
 
-let targetModuleDependencies = targetModule.dependencies || TargetModuleClass.dependencies;
+let targetModuleDependencies = TargetModuleClass.dependencies || targetModule.dependencies;
 
 function getUnixSocketPath(moduleName) {
   return `/tmp/ldex-${moduleName}.sock`;
@@ -122,13 +122,13 @@ httpServer.listen(ipcPath);
     }
   })();
 
-  let defaultModuleOptions = targetModule.defaults || TargetModuleClass.defaults || {};
+  let defaultModuleOptions = TargetModuleClass.defaults || targetModule.defaults || {};
   if (defaultModuleOptions.default != null) {
     defaultModuleOptions = defaultModuleOptions.default;
   }
 
   targetModule.options = objectAssignDeep({}, defaultModuleOptions, moduleConfig);
-  targetModule.config = appConfig;
+  targetModule.config = appConfig; // TODO 22 rename to appConfig also in leasehold-app
   try {
     await targetModule.load(channel, targetModule.options, logger);
   } catch (error) {

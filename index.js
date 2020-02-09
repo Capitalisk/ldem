@@ -30,18 +30,12 @@ Object.values(appConfig.modules).forEach((moduleConfig) => {
 
 let config = objectAssignDeep({}, defaultConfig, appConfig);
 
-let ipcTimeout = config.ipcTimeout == null ? DEFAULT_IPC_TIMEOUT : config.ipcTimeout;
-
-Object.values(config.modules).forEach((moduleConfig) => {
-  if (moduleConfig.logLevel == null) {
-    moduleConfig.logLevel = config.defaultLogLevel;
-  }
-});
+let ipcTimeout = config.base.ipcTimeout == null ? DEFAULT_IPC_TIMEOUT : config.base.ipcTimeout;
 
 let logger = new Logger({
   processStream: process,
   processType: 'master',
-  logLevel: config.defaultLogLevel || 'debug'
+  logLevel: config.base.logLevel || 'debug'
 });
 
 let moduleList = Object.keys(config.modules).filter(moduleName => !!config.modules[moduleName].modulePath);
@@ -51,7 +45,7 @@ let moduleProcesses = {};
 
 (async () => {
   for (let moduleName of moduleList) {
-    let moduleConfig = config.modules[moduleName];
+    let moduleConfig = objectAssignDeep({}, config.base, config.modules[moduleName]);
     let execOptions = {
       env: {...process.env},
       execArgv: process.execArgv,

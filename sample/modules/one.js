@@ -21,7 +21,7 @@ class OneModule {
   }
 
   async load(channel, options) {
-    console.log('Loading module one... Options:', options);
+    console.log('Loading module one...');
     setInterval(() => {
       channel.publish('one:testEvent', 'This is module one');
     }, 1000);

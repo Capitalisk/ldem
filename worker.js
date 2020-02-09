@@ -1,5 +1,6 @@
 const Channel = require('./channel');
 const http = require('http');
+const objectAssignDeep = require('object-assign-deep');
 const eetase = require('eetase');
 eetase(process);
 
@@ -124,7 +125,7 @@ httpServer.listen(ipcPath);
   targetModule.options = moduleConfig;
   targetModule.config = appConfig;
   try {
-    await targetModule.load(channel, moduleConfig, logger);
+    await targetModule.load(channel, targetModule.options, logger);
   } catch (error) {
     logger.error(error);
     process.exit(1);

@@ -16,7 +16,7 @@ class FooModule {
   }
 
   async load(channel, options) {
-    console.log('Loading foo module... Options:', options);
+    console.log('Loading foo module...');
     await channel.invoke('interchain:updateModuleState', {
       foo: {}
     });

@@ -20,7 +20,7 @@ class TwoModule {
   }
 
   async load(channel, options) {
-    console.log('Loading module two... Options:', options);
+    console.log('Loading module two...:');
 
     let handler = async (data) => {
       console.log('Module two received event from module one:', data);

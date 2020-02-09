@@ -1,6 +1,8 @@
 {
-  "ipcTimeout": 10000,
-  "defaultLogLevel": "debug",
+  "base": {
+    "ipcTimeout": 10000,
+    "logLevel": "debug"
+  },
   "redirects": {
     "app": "leasehold_app",
     "network": "leasehold_net",

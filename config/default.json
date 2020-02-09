@@ -11,8 +11,8 @@
   "modules": {
     "leasehold_app": {
       "modulePath": "node_modules/leasehold-app",
-      "mainHTTPAPIModule": "http_api",
-      "mainNetworkModule": "leasehold_net",
+      "defaultHTTPPort": 7000,
+      "defaultWSPort": 7001,
       "nodeInfo": {
         "version": "2.1.2",
         "protocolVersion": "1.1",

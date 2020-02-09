@@ -122,7 +122,12 @@ httpServer.listen(ipcPath);
     }
   })();
 
-  targetModule.options = moduleConfig;
+  let defaultModuleOptions = targetModule.defaults || TargetModuleClass.defaults || {};
+  if (defaultModuleOptions.default != null) {
+    defaultModuleOptions = defaultModuleOptions.default;
+  }
+
+  targetModule.options = objectAssignDeep({}, defaultModuleOptions, moduleConfig);
   targetModule.config = appConfig;
   try {
     await targetModule.load(channel, targetModule.options, logger);

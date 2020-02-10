@@ -1,6 +1,7 @@
 {
   "base": {
     "ipcTimeout": 10000,
+    "loggerPath": "./logger",
     "logLevel": "debug",
     "respawnDelay": 10000
   },

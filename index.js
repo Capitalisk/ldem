@@ -3,6 +3,7 @@ const path = require('path');
 const eetase = require('eetase');
 const Logger = require('./logger');
 const objectAssignDeep = require('object-assign-deep');
+const wait = require('./wait');
 const argv = require('minimist')(process.argv.slice(2));
 
 const CWD = process.cwd();
@@ -60,62 +61,128 @@ let moduleProcesses = {};
       '-t',
       ipcTimeout
     ];
-    let moduleProc = fork(WORKER_PATH, process.argv.slice(2).concat(workerArgs), execOptions);
-    eetase(moduleProc);
-    moduleProc.moduleName = moduleName;
-    moduleProc.moduleConfig = moduleConfig;
-
-    (async () => {
-      for await (let [error] of moduleProc.listener('error')) {
-        logger.error(error);
+    let launchModuleProcess = async (prevModuleProcess) => {
+      if (prevModuleProcess) {
+        logger.debug(`Relaunching process of ${moduleName} module...`);
+      } else {
+        logger.debug(`Launching process of ${moduleName} module...`);
       }
-    })();
+      let moduleProc = fork(WORKER_PATH, process.argv.slice(2).concat(workerArgs), execOptions);
+      eetase(moduleProc);
+      moduleProc.moduleName = moduleName;
+      moduleProc.moduleConfig = moduleConfig;
 
-    let result;
-    try {
-      result = await moduleProc.listener('message').once(ipcTimeout);
-    } catch (error) {
-      logger.error(error);
-      process.exit(1);
-    }
-    let [workerHandshake] = result;
-    // If module does not specify dependencies, assume it depends on all other modules.
-    if (workerHandshake.dependencies == null) {
-      // Use Set to guarantee uniqueness.
-      moduleProc.dependencies = [...new Set(moduleList.filter(mod => mod !== moduleName))];
-    } else {
-      for (let dependencyName of workerHandshake.dependencies) {
-        let targetDependencyName;
-        if (config.redirects[dependencyName] == null) {
-          targetDependencyName = dependencyName;
-        } else {
-          targetDependencyName = config.redirects[dependencyName];
-        }
-        if (!moduleSet.has(targetDependencyName)) {
-          let error = new Error(
-            `Could not find the ${dependencyName} dependency target required by the ${moduleName} module`
-          );
+      (async () => {
+        for await (let [error] of moduleProc.listener('error')) {
           logger.error(error);
-          process.exit(1);
         }
-      }
-      // Use Set to guarantee uniqueness.
-      moduleProc.dependencies = [...new Set(workerHandshake.dependencies)];
-    }
+      })();
 
-    let targetDependencies = moduleProc.dependencies.map(
-      dep => config.redirects[dep] == null ? dep : config.redirects[dep]
-    );
-    // This accounts for redirects.
-    moduleProc.targetDependencies = [...new Set(targetDependencies)];
+      (async () => {
+        for await (let [code, signal] of moduleProc.listener('exit')) {
+          let signalMessage;
+          if (signal) {
+            signalMessage = ` and signal ${signal}`;
+          } else {
+            signalMessage = '';
+          }
+          logger.error(`Process ${moduleProc.pid} of ${moduleName} module exited with code ${code}${signalMessage}`);
+          if (moduleProc.moduleConfig.respawnDelay) {
+            logger.error(`Module ${moduleName} will be respawned in ${moduleProc.moduleConfig.respawnDelay} milliseconds...`);
+            await wait(moduleProc.moduleConfig.respawnDelay);
+          } else {
+            logger.error(`Module ${moduleName} will be respawned immediately`);
+          }
+          launchModuleProcess(moduleProc);
+        }
+      })();
 
-    for (let dep of moduleProc.targetDependencies) {
-      if (!dependentMap[dep]) {
-        dependentMap[dep] = [];
+      let result;
+      try {
+        result = await moduleProc.listener('message').once(ipcTimeout);
+      } catch (error) {
+        logger.fatal(error);
+        process.exit(1);
       }
-      dependentMap[dep].push(moduleName);
-    }
-    moduleProcesses[moduleName] = moduleProc;
+      let [workerHandshake] = result;
+
+      moduleProc.sendMasterHandshake = function() {
+        this.send({
+          event: 'masterHandshake',
+          appConfig: config,
+          moduleConfig: this.moduleConfig,
+          dependencies: this.dependencies,
+          dependents: this.dependents
+        });
+      };
+      moduleProc.sendAppReady = function() {
+        this.send({
+          event: 'appReady'
+        });
+      };
+
+      if (prevModuleProcess) {
+        moduleProc.dependents = prevModuleProcess.dependents;
+        moduleProc.dependencies = prevModuleProcess.dependencies;
+        moduleProc.targetDependencies = prevModuleProcess.targetDependencies;
+
+        moduleProcesses[moduleName] = moduleProc;
+        moduleProc.sendMasterHandshake();
+        // Listen for the 'moduleReady' event.
+        try {
+          await moduleProc.listener('message').once(ipcTimeout);
+        } catch (error) {
+          logger.error(
+            `Did not receive moduleReady event from worker of ${moduleName} module after relaunch`
+          );
+          moduleProc.kill();
+          return;
+        }
+        logger.debug(`Process ${moduleProc.pid} of module ${moduleName} is ready after respawn`);
+        moduleProc.sendAppReady();
+        return;
+      }
+
+      // If module does not specify dependencies, assume it depends on all other modules.
+      if (workerHandshake.dependencies == null) {
+        // Use Set to guarantee uniqueness.
+        moduleProc.dependencies = [...new Set(moduleList.filter(mod => mod !== moduleName))];
+      } else {
+        for (let dependencyName of workerHandshake.dependencies) {
+          let targetDependencyName;
+          if (config.redirects[dependencyName] == null) {
+            targetDependencyName = dependencyName;
+          } else {
+            targetDependencyName = config.redirects[dependencyName];
+          }
+          if (!moduleSet.has(targetDependencyName)) {
+            let error = new Error(
+              `Could not find the ${dependencyName} dependency target required by the ${moduleName} module`
+            );
+            logger.fatal(error);
+            process.exit(1);
+          }
+        }
+        // Use Set to guarantee uniqueness.
+        moduleProc.dependencies = [...new Set(workerHandshake.dependencies)];
+      }
+
+      let targetDependencies = moduleProc.dependencies.map(
+        dep => config.redirects[dep] == null ? dep : config.redirects[dep]
+      );
+      // This accounts for redirects.
+      moduleProc.targetDependencies = [...new Set(targetDependencies)];
+
+      for (let dep of moduleProc.targetDependencies) {
+        if (!dependentMap[dep]) {
+          dependentMap[dep] = [];
+        }
+        dependentMap[dep].push(moduleName);
+      }
+      moduleProcesses[moduleName] = moduleProc;
+    };
+
+    await launchModuleProcess();
   }
 
   let moduleProcNames = Object.keys(moduleProcesses);
@@ -176,31 +243,27 @@ let moduleProcesses = {};
 
   for (let moduleName of orderedProcNames) {
     let moduleProc = moduleProcesses[moduleName];
-    moduleProc.send({
-      event: 'masterHandshake',
-      appConfig: config,
-      moduleConfig: moduleProc.moduleConfig,
-      dependencies: moduleProc.dependencies,
-      dependents: moduleProc.dependents
-    });
+    moduleProc.sendMasterHandshake();
   }
 
   let result;
   try {
     // Listen for the 'moduleReady' event.
+    let moduleProcessList = Object.values(moduleProcesses);
     await Promise.all(
-      Object.values(moduleProcesses).map(async (moduleProc) => {
+      moduleProcessList.map(async (moduleProc) => {
         return moduleProc.listener('message').once(ipcTimeout);
       })
     );
+    moduleProcessList.forEach((moduleProc) => {
+      logger.debug(`Process ${moduleProc.pid} of module ${moduleProc.moduleName} is ready`);
+    });
     for (let moduleName of orderedProcNames) {
       let moduleProc = moduleProcesses[moduleName];
-      moduleProc.send({
-        event: 'appReady'
-      });
+      moduleProc.sendAppReady();
     }
   } catch (error) {
-    logger.error(error);
+    logger.fatal(error);
     process.exit(1);
   }
 

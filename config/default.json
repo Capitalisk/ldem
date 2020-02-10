@@ -1,7 +1,8 @@
 {
   "base": {
     "ipcTimeout": 10000,
-    "logLevel": "debug"
+    "logLevel": "debug",
+    "respawnDelay": 10000
   },
   "redirects": {
     "app": "leasehold_app",
@@ -11,6 +12,7 @@
   "modules": {
     "leasehold_app": {
       "modulePath": "node_modules/leasehold-app",
+      "respawnDelay": 0,
       "defaultHTTPPort": 7000,
       "defaultWSPort": 7001,
       "nodeInfo": {
@@ -22,6 +24,7 @@
     },
     "leasehold_net": {
       "modulePath": "node_modules/leasehold-net",
+      "respawnDelay": 0,
       "peerSelectionPluginPath": "../leasehold-interchain",
       "wsPort": 7001,
       "maxOutboundConnections": 40,

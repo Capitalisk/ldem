@@ -14,8 +14,6 @@ const CONFIG_PATH = path.join(CWD, argv.c);
 const defaultConfig = require('./config/default.json');
 const appConfig = require(CONFIG_PATH);
 
-// TODO 2: Handle worker crashes/restarts.
-
 Object.values(defaultConfig.modules).forEach((moduleConfig) => {
   if (moduleConfig.modulePath != null) {
     moduleConfig.modulePath = path.join(__dirname, moduleConfig.modulePath);

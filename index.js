@@ -15,30 +15,30 @@ class LDEM {
       config
     } = options;
 
-    defaultConfig.base.loggerPath = path.join(__dirname, defaultConfig.base.loggerPath);
-
-    Object.values(defaultConfig.modules).forEach((moduleConfig) => {
-      if (moduleConfig.modulePath != null) {
-        moduleConfig.modulePath = path.join(__dirname, moduleConfig.modulePath);
-      }
-    });
-
-    Object.values(config.modules).forEach((moduleConfig) => {
-      if (moduleConfig.modulePath != null) {
-        moduleConfig.modulePath = path.join(CWD, moduleConfig.modulePath);
-      }
-    });
+    defaultConfig.base.components.logger.loggerLibPath = path.resolve(
+      __dirname,
+      defaultConfig.base.components.logger.loggerLibPath
+    );
 
     let appConfig = objectAssignDeep({}, defaultConfig, config);
+    let rootDirPath = appConfig.base.rootDirPath || CWD;
+    let componentsConfig = appConfig.base.components;
+    let loggerConfig = componentsConfig.logger;
 
-    const Logger = require(appConfig.base.loggerPath);
+    Object.values(appConfig.modules).forEach((moduleConfig) => {
+      if (moduleConfig.modulePath != null) {
+        moduleConfig.modulePath = path.resolve(rootDirPath, moduleConfig.modulePath);
+      }
+    });
+
+    const Logger = require(loggerConfig.loggerLibPath);
 
     let ipcTimeout = appConfig.base.ipcTimeout;
 
     let logger = new Logger({
+      ...loggerConfig,
       processStream: process,
-      processType: 'master',
-      logLevel: appConfig.base.logLevel || 'debug'
+      processType: 'master'
     });
 
     let moduleList = Object.keys(appConfig.modules).filter(moduleName => !!appConfig.modules[moduleName].modulePath);
@@ -47,22 +47,25 @@ class LDEM {
     let moduleProcesses = {};
 
     (async () => {
+      let launchingModulesPromises = [];
+
       for (let moduleName of moduleList) {
         let moduleConfig = objectAssignDeep({}, appConfig.base, appConfig.modules[moduleName]);
+        let workerCWDPath = moduleConfig.workerCWDPath || CWD;
         let execOptions = {
           env: {...process.env},
           execArgv: process.execArgv,
-          cwd: CWD
+          cwd: workerCWDPath
         };
         let workerArgs = [
-          '-n',
+          '--ldem-module-name',
           moduleName,
-          `-p`,
+          `--ldem-module-path`,
           moduleConfig.modulePath,
-          '-l',
-          moduleConfig.logLevel || 'debug',
-          '-t',
-          ipcTimeout
+          '--ldem-ipc-timeout',
+          ipcTimeout,
+          '--ldem-components-config',
+          JSON.stringify(componentsConfig)
         ];
         let launchModuleProcess = async (prevModuleProcess) => {
           if (prevModuleProcess) {
@@ -185,8 +188,12 @@ class LDEM {
           moduleProcesses[moduleName] = moduleProc;
         };
 
-        await launchModuleProcess();
+        launchingModulesPromises.push(
+          launchModuleProcess()
+        );
       }
+
+      await Promise.all(launchingModulesPromises);
 
       let moduleProcNames = Object.keys(moduleProcesses);
       let modulesWithoutDependencies = [];

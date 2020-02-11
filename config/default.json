@@ -1,9 +1,17 @@
 {
   "base": {
+    "rootDirPath": null,
+    "workerCWDPath": null,
     "ipcTimeout": 10000,
-    "loggerPath": "./logger",
-    "logLevel": "debug",
-    "respawnDelay": 10000
+    "respawnDelay": 10000,
+    "components": {
+      "logger": {
+        "loggerLibPath": "./logger",
+        "logFileName": "./logs/ldem.log",
+        "consoleLogLevel": "debug",
+        "fileLogLevel": "error"
+      }
+    }
   },
   "redirects": {
     "app": "leasehold_app",

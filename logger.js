@@ -17,7 +17,7 @@ class Logger {
     if (this.moduleName) {
       this.processInfo += `,${this.moduleName}`;
     }
-    this.logLevel = LOG_LEVELS[options.logLevel];
+    this.consoleLogLevel = LOG_LEVELS[options.consoleLogLevel];
   }
 
   fatal(...args) {
@@ -27,7 +27,7 @@ class Logger {
   }
 
   error(...args) {
-    if (this.logLevel < LOG_LEVELS.error) {
+    if (this.consoleLogLevel < LOG_LEVELS.error) {
       return;
     }
     if (this.processStream.connected || this.isMasterProcess) {
@@ -36,7 +36,7 @@ class Logger {
   }
 
   warn(...args) {
-    if (this.logLevel < LOG_LEVELS.warn) {
+    if (this.consoleLogLevel < LOG_LEVELS.warn) {
       return;
     }
     if (this.processStream.connected || this.isMasterProcess) {
@@ -45,7 +45,7 @@ class Logger {
   }
 
   info(...args) {
-    if (this.logLevel < LOG_LEVELS.info) {
+    if (this.consoleLogLevel < LOG_LEVELS.info) {
       return;
     }
     if (this.processStream.connected || this.isMasterProcess) {
@@ -54,7 +54,7 @@ class Logger {
   }
 
   debug(...args) {
-    if (this.logLevel < LOG_LEVELS.debug) {
+    if (this.consoleLogLevel < LOG_LEVELS.debug) {
       return;
     }
     if (this.processStream.connected || this.isMasterProcess) {
@@ -63,7 +63,7 @@ class Logger {
   }
 
   trace(...args) {
-    if (this.logLevel < LOG_LEVELS.trace) {
+    if (this.consoleLogLevel < LOG_LEVELS.trace) {
       return;
     }
     if (this.processStream.connected || this.isMasterProcess) {

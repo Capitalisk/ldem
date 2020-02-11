@@ -7,22 +7,24 @@ eetase(process);
 
 const socketClusterServer = require('socketcluster-server');
 const fs = require('fs');
-const Logger = require('./logger');
 const argv = require('minimist')(process.argv.slice(2));
 
-const MODULE_NAME = argv.n;
-const MODULE_PATH = argv.p;
-const LOG_LEVEL = argv.l;
-const IPC_TIMEOUT = argv.t;
+const MODULE_NAME = argv['ldem-module-name'];
+const MODULE_PATH = argv['ldem-module-path'];
+const IPC_TIMEOUT = argv['ldem-ipc-timeout'];
+const componentsConfig = JSON.parse(argv['ldem-components-config']);
+const loggerConfig = componentsConfig.logger;
 
 const DEFAULT_MODULE_NAME = 'chain';
 const SOCKET_REPLACED_CODE = 4500;
 
+const Logger = require(loggerConfig.loggerLibPath);
+
 let logger = new Logger({
+  ...loggerConfig,
   processStream: process,
   processType: 'worker',
-  moduleName: MODULE_NAME,
-  logLevel: LOG_LEVEL
+  moduleName: MODULE_NAME
 });
 
 let TargetModuleClass = require(MODULE_PATH);

@@ -27,9 +27,9 @@ class LDEM {
 
     let rawModuleList = Object.keys(appConfig.modules);
 
-    for (let moduleName of rawModuleList) {
-      appConfig.modules[moduleName] = objectAssignDeep({}, appConfig.base, appConfig.modules[moduleName]);
-      let moduleConfig = appConfig.modules[moduleName];
+    for (let moduleAlias of rawModuleList) {
+      appConfig.modules[moduleAlias] = objectAssignDeep({}, appConfig.base, appConfig.modules[moduleAlias]);
+      let moduleConfig = appConfig.modules[moduleAlias];
       if (moduleConfig.modulePath != null) {
         moduleConfig.modulePath = path.resolve(rootDirPath, moduleConfig.modulePath);
       }
@@ -46,9 +46,9 @@ class LDEM {
     });
 
     let moduleList = rawModuleList.filter(
-      moduleName => (
-        !!appConfig.modules[moduleName].modulePath &&
-        appConfig.modules[moduleName].moduleEnabled
+      moduleAlias => (
+        !!appConfig.modules[moduleAlias].modulePath &&
+        appConfig.modules[moduleAlias].moduleEnabled
       )
     );
     let moduleSet = new Set(moduleList);
@@ -58,8 +58,8 @@ class LDEM {
     (async () => {
       let launchingModulesPromises = [];
 
-      for (let moduleName of moduleList) {
-        let moduleConfig = objectAssignDeep({}, appConfig.base, appConfig.modules[moduleName]);
+      for (let moduleAlias of moduleList) {
+        let moduleConfig = objectAssignDeep({}, appConfig.base, appConfig.modules[moduleAlias]);
         let workerCWDPath = moduleConfig.workerCWDPath || CWD;
         let execOptions = {
           env: {...process.env},
@@ -67,8 +67,8 @@ class LDEM {
           cwd: workerCWDPath
         };
         let workerArgs = [
-          '--ldem-module-name',
-          moduleName,
+          '--ldem-module-alias',
+          moduleAlias,
           `--ldem-module-path`,
           moduleConfig.modulePath,
           '--ldem-ipc-timeout',
@@ -78,13 +78,13 @@ class LDEM {
         ];
         let launchModuleProcess = async (prevModuleProcess) => {
           if (prevModuleProcess) {
-            logger.debug(`Relaunching process of ${moduleName} module...`);
+            logger.debug(`Relaunching process of ${moduleAlias} module...`);
           } else {
-            logger.debug(`Launching process of ${moduleName} module...`);
+            logger.debug(`Launching process of ${moduleAlias} module...`);
           }
           let moduleProc = fork(WORKER_PATH, workerArgs, execOptions);
           eetase(moduleProc);
-          moduleProc.moduleName = moduleName;
+          moduleProc.moduleAlias = moduleAlias;
           moduleProc.moduleConfig = moduleConfig;
 
           (async () => {
@@ -101,12 +101,12 @@ class LDEM {
               } else {
                 signalMessage = '';
               }
-              logger.error(`Process ${moduleProc.pid} of ${moduleName} module exited with code ${code}${signalMessage}`);
+              logger.error(`Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage}`);
               if (moduleProc.moduleConfig.respawnDelay) {
-                logger.error(`Module ${moduleName} will be respawned in ${moduleProc.moduleConfig.respawnDelay} milliseconds...`);
+                logger.error(`Module ${moduleAlias} will be respawned in ${moduleProc.moduleConfig.respawnDelay} milliseconds...`);
                 await wait(moduleProc.moduleConfig.respawnDelay);
               } else {
-                logger.error(`Module ${moduleName} will be respawned immediately`);
+                logger.error(`Module ${moduleAlias} will be respawned immediately`);
               }
               launchModuleProcess(moduleProc);
             }
@@ -141,19 +141,19 @@ class LDEM {
             moduleProc.dependencies = prevModuleProcess.dependencies;
             moduleProc.targetDependencies = prevModuleProcess.targetDependencies;
 
-            moduleProcesses[moduleName] = moduleProc;
+            moduleProcesses[moduleAlias] = moduleProc;
             moduleProc.sendMasterHandshake();
             // Listen for the 'moduleReady' event.
             try {
               await moduleProc.listener('message').once(ipcTimeout);
             } catch (error) {
               logger.error(
-                `Did not receive moduleReady event from worker of ${moduleName} module after relaunch`
+                `Did not receive moduleReady event from worker of ${moduleAlias} module after relaunch`
               );
               moduleProc.kill();
               return;
             }
-            logger.debug(`Process ${moduleProc.pid} of module ${moduleName} is ready after respawn`);
+            logger.debug(`Process ${moduleProc.pid} of module ${moduleAlias} is ready after respawn`);
             moduleProc.sendAppReady();
             return;
           }
@@ -161,7 +161,7 @@ class LDEM {
           // If module does not specify dependencies, assume it depends on all other modules.
           if (workerHandshake.dependencies == null) {
             // Use Set to guarantee uniqueness.
-            moduleProc.dependencies = [...new Set(moduleList.filter(mod => mod !== moduleName))];
+            moduleProc.dependencies = [...new Set(moduleList.filter(mod => mod !== moduleAlias))];
           } else {
             for (let dependencyName of workerHandshake.dependencies) {
               let targetDependencyName;
@@ -172,7 +172,7 @@ class LDEM {
               }
               if (!moduleSet.has(targetDependencyName)) {
                 let error = new Error(
-                  `Could not find the ${dependencyName} dependency target required by the ${moduleName} module`
+                  `Could not find the ${dependencyName} dependency target required by the ${moduleAlias} module`
                 );
                 logger.fatal(error);
                 process.exit(1);
@@ -192,9 +192,9 @@ class LDEM {
             if (!dependentMap[dep]) {
               dependentMap[dep] = [];
             }
-            dependentMap[dep].push(moduleName);
+            dependentMap[dep].push(moduleAlias);
           }
-          moduleProcesses[moduleName] = moduleProc;
+          moduleProcesses[moduleAlias] = moduleProc;
         };
 
         launchingModulesPromises.push(
@@ -207,11 +207,11 @@ class LDEM {
       let moduleProcNames = Object.keys(moduleProcesses);
       let modulesWithoutDependencies = [];
 
-      for (let moduleName of moduleProcNames) {
-        let moduleProc = moduleProcesses[moduleName];
-        moduleProc.dependents = dependentMap[moduleName] || [];
+      for (let moduleAlias of moduleProcNames) {
+        let moduleProc = moduleProcesses[moduleAlias];
+        moduleProc.dependents = dependentMap[moduleAlias] || [];
         if (!moduleProc.targetDependencies.length) {
-          modulesWithoutDependencies.push(moduleName);
+          modulesWithoutDependencies.push(moduleAlias);
         }
       }
 
@@ -221,13 +221,13 @@ class LDEM {
 
       while (currentLayer.length) {
         let nextLayerSet = new Set();
-        for (let moduleName of currentLayer) {
-          let moduleProc = moduleProcesses[moduleName];
+        for (let moduleAlias of currentLayer) {
+          let moduleProc = moduleProcesses[moduleAlias];
           let isReady = moduleProc.targetDependencies.every(dep => visitedModulesSet.has(dep));
           if (isReady) {
-            orderedProcNames.push(moduleName);
-            visitedModulesSet.add(moduleName);
-            nextLayerSet.delete(moduleName);
+            orderedProcNames.push(moduleAlias);
+            visitedModulesSet.add(moduleAlias);
+            nextLayerSet.delete(moduleAlias);
             for (let dependent of moduleProc.dependents) {
               if (!visitedModulesSet.has(dependent)) {
                 nextLayerSet.add(dependent);
@@ -240,9 +240,9 @@ class LDEM {
 
       let unvisitedModuleSet = new Set();
 
-      for (let moduleName of moduleProcNames) {
-        if (!visitedModulesSet.has(moduleName)) {
-          unvisitedModuleSet.add(moduleName);
+      for (let moduleAlias of moduleProcNames) {
+        if (!visitedModulesSet.has(moduleAlias)) {
+          unvisitedModuleSet.add(moduleAlias);
         }
       }
 
@@ -253,15 +253,15 @@ class LDEM {
       }
 
       // Circular dependencies will be instantiated in any order.
-      for (let unvisitedModuleName of unvisitedModuleSet) {
-        orderedProcNames.push(unvisitedModuleName);
+      for (let unvisitedModuleAlias of unvisitedModuleSet) {
+        orderedProcNames.push(unvisitedModuleAlias);
       }
       logger.debug(
         `Module loading order: ${orderedProcNames.join(', ')}`
       );
 
-      for (let moduleName of orderedProcNames) {
-        let moduleProc = moduleProcesses[moduleName];
+      for (let moduleAlias of orderedProcNames) {
+        let moduleProc = moduleProcesses[moduleAlias];
         moduleProc.sendMasterHandshake();
       }
 
@@ -275,10 +275,10 @@ class LDEM {
           })
         );
         moduleProcessList.forEach((moduleProc) => {
-          logger.debug(`Process ${moduleProc.pid} of module ${moduleProc.moduleName} is ready`);
+          logger.debug(`Process ${moduleProc.pid} of module ${moduleProc.moduleAlias} is ready`);
         });
-        for (let moduleName of orderedProcNames) {
-          let moduleProc = moduleProcesses[moduleName];
+        for (let moduleAlias of orderedProcNames) {
+          let moduleProc = moduleProcesses[moduleAlias];
           moduleProc.sendAppReady();
         }
       } catch (error) {

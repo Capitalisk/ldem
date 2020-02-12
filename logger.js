@@ -9,13 +9,13 @@ const LOG_LEVELS = {
 
 class Logger {
   constructor(options = {}) {
-    this.moduleName = options.moduleName;
+    this.moduleAlias = options.moduleAlias;
     this.isMasterProcess = options.processType === 'master';
     this.processInfo = options.processType;
     this.processStream = options.processStream;
     this.processInfo += `,${this.processStream.pid}`;
-    if (this.moduleName) {
-      this.processInfo += `,${this.moduleName}`;
+    if (this.moduleAlias) {
+      this.processInfo += `,${this.moduleAlias}`;
     }
     this.consoleLogLevel = LOG_LEVELS[options.consoleLogLevel];
   }

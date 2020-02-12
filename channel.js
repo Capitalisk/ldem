@@ -6,7 +6,7 @@ class Channel extends AsyncStreamEmitter {
     super();
 
     let {
-      moduleName,
+      moduleAlias,
       moduleActions,
       dependencies,
       dependents,
@@ -15,11 +15,11 @@ class Channel extends AsyncStreamEmitter {
       exchange,
       inboundModuleSockets,
       subscribeTimeout,
-      defaultTargetModuleName
+      defaultTargetModuleAlias
     } = options;
 
     this.exchange = exchange;
-    this.moduleName = moduleName;
+    this.moduleAlias = moduleAlias;
     this.dependencies = dependencies || [];
     this.dependents = dependents;
     this.redirects = redirects;
@@ -37,7 +37,7 @@ class Channel extends AsyncStreamEmitter {
       let client = socketClusterClient.create({
         protocolScheme: 'ws+unix',
         socketPath: modulePathFunction(dependencyName),
-        query: {source: moduleName}
+        query: {source: moduleAlias}
       });
 
       (async () => {
@@ -62,24 +62,30 @@ class Channel extends AsyncStreamEmitter {
   }
 
   async subscribe(channel, handler) {
-    let {targetModuleName, locator} = this._getLocatorParts(channel);
-    let targetChannel = this._computeTargetChannel(targetModuleName, locator);
-    if (!this._dependencyLookup[targetModuleName]) {
+    let {targetModuleAlias, locator} = this._getLocatorParts(channel);
+    let targetChannel = this._computeTargetChannel(targetModuleAlias, locator);
+    if (!this._dependencyLookup[targetModuleAlias]) {
       let error = new Error(
         `Cannot subscribe to the ${
           channel
         } channel on the ${
-          targetModuleName
+          targetModuleAlias
         } module because it is not listed as a dependency of the ${
-          this.moduleName
+          this.moduleAlias
         } module`
       );
       error.name = 'InvalidTargetModuleError';
       throw error;
     }
-    let channelObject = this.clients[targetModuleName].subscribe(targetChannel);
+    let channelObject = this.clients[targetModuleAlias].subscribe(targetChannel);
     let channelDataConsumer = channelObject.createConsumer();
-    handler.channelOutputConsumerId = channelDataConsumer.id;
+    if (!handler.channelOutputConsumerIds) {
+      handler.channelOutputConsumerIds = new Map();
+    }
+    if (!handler.channelOutputConsumerIds.has(targetChannel)) {
+      handler.channelOutputConsumerIds.set(targetChannel, []);
+    }
+    handler.channelOutputConsumerIds.get(targetChannel).push(channelDataConsumer.id);
 
     (async () => {
       while (true) {
@@ -105,9 +111,9 @@ class Channel extends AsyncStreamEmitter {
         `Subscription to the ${
           channel
         } channel of the ${
-          targetModuleName
+          targetModuleAlias
         } module by the ${
-          this.moduleName
+          this.moduleAlias
         } module timed out after ${
           this.subscribeTimeout
         } milliseconds`
@@ -118,25 +124,34 @@ class Channel extends AsyncStreamEmitter {
   }
 
   unsubscribe(channel, handler) {
-    let {targetModuleName, locator} = this._getLocatorParts(channel);
-    let targetChannel = this._computeTargetChannel(targetModuleName, locator);
-    if (!this._dependencyLookup[targetModuleName]) {
+    let {targetModuleAlias, locator} = this._getLocatorParts(channel);
+    let targetChannel = this._computeTargetChannel(targetModuleAlias, locator);
+    if (!this._dependencyLookup[targetModuleAlias]) {
       let error = new Error(
         `Cannot unsubscribe from the ${
           channel
         } channel on the ${
-          targetModuleName
+          targetModuleAlias
         } module because it is not listed as a dependency of the ${
-          this.moduleName
+          this.moduleAlias
         } module`
       );
       error.name = 'InvalidTargetModuleError';
       throw error;
     }
-    let targetClient = this.clients[targetModuleName];
+    let targetClient = this.clients[targetModuleAlias];
     let channelObject = targetClient.channel(targetChannel);
     if (channelObject) {
-      channelObject.killOutputConsumer(handler.channelOutputConsumerId);
+      if (handler.channelOutputConsumerIds && handler.channelOutputConsumerIds.has(targetChannel)) {
+        let channelConsumerIds = handler.channelOutputConsumerIds.get(targetChannel);
+        for (let consumerId of channelConsumerIds) {
+          channelObject.killOutputConsumer(consumerId);
+        }
+        handler.channelOutputConsumerIds.delete(targetChannel);
+        if (handler.channelOutputConsumerIds.size <= 0) {
+          delete handler.channelOutputConsumerIds;
+        }
+      }
       let consumerCount = channelObject.getOutputConsumerStatsList().length;
       if (consumerCount <= 0) {
         channelObject.unsubscribe();
@@ -160,15 +175,15 @@ class Channel extends AsyncStreamEmitter {
   }
 
   async invoke(action, data) {
-    let {targetModuleName, locator} = this._getLocatorParts(action);
-    if (!this._dependencyLookup[targetModuleName]) {
+    let {targetModuleAlias, locator} = this._getLocatorParts(action);
+    if (!this._dependencyLookup[targetModuleAlias]) {
       let error = new Error(
         `Cannot invoke action ${
           action
         } on the ${
-          targetModuleName
+          targetModuleAlias
         } module because it is not listed as a dependency of the ${
-          this.moduleName
+          this.moduleAlias
         } module`
       );
       error.name = 'InvalidTargetModuleError';
@@ -178,21 +193,21 @@ class Channel extends AsyncStreamEmitter {
       isPublic: false,
       params: data
     };
-    let targetSocket = this.clients[targetModuleName];
+    let targetSocket = this.clients[targetModuleAlias];
     return targetSocket.invoke(locator, invokePacket);
   }
 
   async invokePublic(action, data) {
-    let {targetModuleName, locator} = this._getLocatorParts(action);
-    let targetSocket = this.clients[targetModuleName] || this.inboundModuleSockets[targetModuleName];
+    let {targetModuleAlias, locator} = this._getLocatorParts(action);
+    let targetSocket = this.clients[targetModuleAlias] || this.inboundModuleSockets[targetModuleAlias];
     if (!targetSocket) {
       let error = new Error(
         `Cannot invoke public action ${
           action
         } on the ${
-          targetModuleName
+          targetModuleAlias
         } module because it is not connected to the ${
-          this.moduleName
+          this.moduleAlias
         } module as either a dependent or dependency`
       );
       error.name = 'UnreachableTargetModuleError';
@@ -206,29 +221,29 @@ class Channel extends AsyncStreamEmitter {
   }
 
   _getTargetChannel(channel) {
-    let {targetModuleName, locator} = this._getLocatorParts(channel);
-    return this._computeTargetChannel(targetModuleName, locator);
+    let {targetModuleAlias, locator} = this._getLocatorParts(channel);
+    return this._computeTargetChannel(targetModuleAlias, locator);
   }
 
-  _computeTargetChannel(targetModuleName, locator) {
-    return `${targetModuleName}:${locator}`;
+  _computeTargetChannel(targetModuleAlias, locator) {
+    return `${targetModuleAlias}:${locator}`;
   }
 
   _getLocatorParts(command) {
-    let targetModuleName;
+    let targetModuleAlias;
     let locator;
     if (command.indexOf(':') === -1) {
-      targetModuleName = this.defaultTargetModuleName;
+      targetModuleAlias = this.defaultTargetModuleAlias;
       locator = command;
     } else {
       let parts = command.split(':');
-      targetModuleName = parts[0];
+      targetModuleAlias = parts[0];
       locator = parts.slice(1).join(':');
     }
-    if (this.redirects[targetModuleName] != null) {
-      targetModuleName = this.redirects[targetModuleName];
+    if (this.redirects[targetModuleAlias] != null) {
+      targetModuleAlias = this.redirects[targetModuleAlias];
     }
-    return {targetModuleName, locator};
+    return {targetModuleAlias, locator};
   }
 }
 

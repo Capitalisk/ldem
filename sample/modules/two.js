@@ -4,7 +4,7 @@ class TwoModule {
   }
 
   get dependencies() {
-    return ['one'];
+    return ['one', 'other'];
   }
 
   get events() {
@@ -23,9 +23,10 @@ class TwoModule {
     console.log('Loading module two...:');
 
     let handler = async (data) => {
-      console.log('Module two received event from module one:', data);
+      console.log('Module two received event from another module:', data);
     };
     channel.subscribe('one:testEvent', handler);
+    channel.subscribe('other:testEvent', handler);
 
     let result = await channel.invoke('one:doSomething', {number: 1});
     console.log('one:doSomething result:', result);

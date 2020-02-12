@@ -1,6 +1,6 @@
 class OneModule {
-  get alias() {
-    return 'one';
+  constructor({alias}) {
+    this.alias = alias;
   }
 
   get dependencies() {
@@ -20,10 +20,10 @@ class OneModule {
     };
   }
 
-  async load(channel, options) {
-    console.log('Loading module one...');
+  async load(channel, options, logger) {
+    console.log(`Loading module ${this.alias}...`);
     setInterval(() => {
-      channel.publish('one:testEvent', 'This is module one');
+      channel.publish(`${this.alias}:testEvent`, `This is module ${this.alias}`);
     }, 1000);
   }
 

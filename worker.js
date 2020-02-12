@@ -9,13 +9,13 @@ const socketClusterServer = require('socketcluster-server');
 const fs = require('fs');
 const argv = require('minimist')(process.argv.slice(2));
 
-const MODULE_NAME = argv['ldem-module-name'];
+const MODULE_ALIAS = argv['ldem-module-alias'];
 const MODULE_PATH = argv['ldem-module-path'];
 const IPC_TIMEOUT = argv['ldem-ipc-timeout'];
 const componentsConfig = JSON.parse(argv['ldem-components-config']);
 const loggerConfig = componentsConfig.logger;
 
-const DEFAULT_MODULE_NAME = 'chain';
+const DEFAULT_MODULE_ALIAS = 'chain';
 const SOCKET_REPLACED_CODE = 4500;
 
 const Logger = require(loggerConfig.loggerLibPath);
@@ -24,22 +24,24 @@ let logger = new Logger({
   ...loggerConfig,
   processStream: process,
   processType: 'worker',
-  moduleName: MODULE_NAME
+  moduleAlias: MODULE_ALIAS
 });
 
 let TargetModuleClass = require(MODULE_PATH);
 let targetModule = new TargetModuleClass({
-  processStream: process
+  processStream: process,
+  logger,
+  alias: MODULE_ALIAS
 });
 let dependents = [];
 
 let targetModuleDependencies = TargetModuleClass.dependencies || targetModule.dependencies;
 
-function getUnixSocketPath(moduleName) {
-  return `/tmp/ldex-${moduleName}.sock`;
+function getUnixSocketPath(moduleAlias) {
+  return `/tmp/ldex-${moduleAlias}.sock`;
 }
 
-let ipcPath = getUnixSocketPath(MODULE_NAME);
+let ipcPath = getUnixSocketPath(MODULE_ALIAS);
 try {
   fs.unlinkSync(ipcPath);
 } catch (error) {}
@@ -66,7 +68,7 @@ async function handleRPC(actionName, request) {
       `The ${
         actionName
       } action of the ${
-        MODULE_NAME
+        MODULE_ALIAS
       } module is not public`
     );
     request.error(error);
@@ -81,7 +83,7 @@ async function handleRPC(actionName, request) {
     logger.debug(error);
     let rpcError = new Error(
       `The ${actionName} action invoked on the ${
-        MODULE_NAME
+        MODULE_ALIAS
       } module failed because of the following error: ${error.message}`
     );
     rpcError.name = 'RPCError';
@@ -104,7 +106,7 @@ async function handleRPC(actionName, request) {
         `Connection from module ${
           sourceModule
         } to module ${
-          MODULE_NAME
+          MODULE_ALIAS
         } was replaced by a newer connection`
       );
     }
@@ -161,7 +163,7 @@ httpServer.listen(ipcPath);
   let {moduleConfig, appConfig, dependencies, dependents} = masterHandshake;
 
   let channel = new Channel({
-    moduleName: MODULE_NAME,
+    moduleAlias: MODULE_ALIAS,
     moduleActions: moduleActionNames,
     dependencies,
     dependents,
@@ -170,7 +172,7 @@ httpServer.listen(ipcPath);
     exchange: agServer.exchange,
     inboundModuleSockets,
     subscribeTimeout: IPC_TIMEOUT,
-    defaultTargetModuleName: DEFAULT_MODULE_NAME
+    defaultTargetModuleAlias: DEFAULT_MODULE_ALIAS
   });
 
   (async () => {
@@ -190,10 +192,11 @@ httpServer.listen(ipcPath);
     defaultModuleOptions = defaultModuleOptions.default;
   }
 
+  // For backwards compatibility with Lisk modules.
   targetModule.options = objectAssignDeep({}, defaultModuleOptions, moduleConfig);
   targetModule.appConfig = appConfig;
   try {
-    await targetModule.load(channel, targetModule.options, logger);
+    await targetModule.load(channel, targetModule.options, logger, targetModule.appConfig);
   } catch (error) {
     logger.error(error);
     process.exit(1);

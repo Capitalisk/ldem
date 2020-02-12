@@ -69,12 +69,8 @@ class LDEM {
         let workerArgs = [
           '--ldem-module-alias',
           moduleAlias,
-          `--ldem-module-path`,
-          moduleConfig.modulePath,
           '--ldem-ipc-timeout',
-          ipcTimeout,
-          '--ldem-components-config',
-          JSON.stringify(componentsConfig)
+          ipcTimeout
         ];
         let launchModuleProcess = async (prevModuleProcess) => {
           if (prevModuleProcess) {
@@ -86,6 +82,11 @@ class LDEM {
           eetase(moduleProc);
           moduleProc.moduleAlias = moduleAlias;
           moduleProc.moduleConfig = moduleConfig;
+          moduleProc.send({
+            event: 'masterInit',
+            appConfig,
+            moduleConfig
+          });
 
           (async () => {
             for await (let [error] of moduleProc.listener('error')) {
@@ -122,16 +123,14 @@ class LDEM {
           let [workerHandshake] = result;
 
           moduleProc.sendMasterHandshake = function() {
-            this.send({
+            moduleProc.send({
               event: 'masterHandshake',
-              appConfig,
-              moduleConfig: this.moduleConfig,
-              dependencies: this.dependencies,
-              dependents: this.dependents
+              dependencies: moduleProc.dependencies,
+              dependents: moduleProc.dependents
             });
           };
           moduleProc.sendAppReady = function() {
-            this.send({
+            moduleProc.send({
               event: 'appReady'
             });
           };
@@ -263,27 +262,20 @@ class LDEM {
       for (let moduleAlias of orderedProcNames) {
         let moduleProc = moduleProcesses[moduleAlias];
         moduleProc.sendMasterHandshake();
+        try {
+          // Listen for the 'moduleReady' event.
+          await moduleProc.listener('message').once(ipcTimeout);
+        } catch (error) {
+          logger.fatal(error);
+          process.exit(1);
+        }
+        logger.debug(`Process ${moduleProc.pid} of module ${moduleProc.moduleAlias} is ready`);
       }
 
       let result;
-      try {
-        // Listen for the 'moduleReady' event.
-        let moduleProcessList = Object.values(moduleProcesses);
-        await Promise.all(
-          moduleProcessList.map(async (moduleProc) => {
-            return moduleProc.listener('message').once(ipcTimeout);
-          })
-        );
-        moduleProcessList.forEach((moduleProc) => {
-          logger.debug(`Process ${moduleProc.pid} of module ${moduleProc.moduleAlias} is ready`);
-        });
-        for (let moduleAlias of orderedProcNames) {
-          let moduleProc = moduleProcesses[moduleAlias];
-          moduleProc.sendAppReady();
-        }
-      } catch (error) {
-        logger.fatal(error);
-        process.exit(1);
+      for (let moduleAlias of orderedProcNames) {
+        let moduleProc = moduleProcesses[moduleAlias];
+        moduleProc.sendAppReady();
       }
     })();
   }

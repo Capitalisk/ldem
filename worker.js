@@ -181,6 +181,7 @@ httpServer.listen(ipcPath);
     exchange: agServer.exchange,
     inboundModuleSockets,
     subscribeTimeout: IPC_TIMEOUT,
+    allowPublishingWithoutAlias: targetModule.options.allowPublishingWithoutAlias,
     defaultTargetModuleAlias: targetModule.options.defaultTargetModuleAlias
   });
 

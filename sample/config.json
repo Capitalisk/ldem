@@ -53,6 +53,10 @@
     "one": {
       "modulePath": "sample/modules/one.js"
     },
+    "other": {
+      "modulePath": "sample/modules/one.js",
+      "description": "This module uses the one module as a template"
+    },
     "two": {
       "modulePath": "sample/modules/two.js"
     },

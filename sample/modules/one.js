@@ -4,7 +4,7 @@ class OneModule {
   }
 
   get dependencies() {
-    return ['network'];
+    return ['app', 'network'];
   }
 
   get events() {
@@ -20,7 +20,11 @@ class OneModule {
     };
   }
 
-  async load(channel, options, logger) {
+  async load(channel, options) {
+    channel.invoke('app:updateModuleState', {one: {hello: 123}});
+    let result = await channel.invoke('app:getApplicationState');
+    console.log('Application state:', result);
+
     console.log(`Loading module ${this.alias}...`);
     setInterval(() => {
       channel.publish(`${this.alias}:testEvent`, `This is module ${this.alias}`);

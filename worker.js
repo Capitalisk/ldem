@@ -162,6 +162,15 @@ httpServer.listen(ipcPath);
   let [masterHandshake] = result;
   let {moduleConfig, appConfig, dependencies, dependents} = masterHandshake;
 
+  let defaultModuleOptions = TargetModuleClass.defaults || targetModule.defaults || {};
+  if (defaultModuleOptions.default != null) {
+    defaultModuleOptions = defaultModuleOptions.default;
+  }
+
+  // For backwards compatibility with Lisk modules.
+  targetModule.options = objectAssignDeep({}, defaultModuleOptions, moduleConfig);
+  targetModule.appConfig = appConfig;
+
   let channel = new Channel({
     moduleAlias: MODULE_ALIAS,
     moduleActions: moduleActionNames,
@@ -172,7 +181,7 @@ httpServer.listen(ipcPath);
     exchange: agServer.exchange,
     inboundModuleSockets,
     subscribeTimeout: IPC_TIMEOUT,
-    defaultTargetModuleAlias: DEFAULT_MODULE_ALIAS
+    defaultTargetModuleAlias: targetModule.options.defaultTargetModuleAlias
   });
 
   (async () => {
@@ -187,16 +196,8 @@ httpServer.listen(ipcPath);
     }
   })();
 
-  let defaultModuleOptions = TargetModuleClass.defaults || targetModule.defaults || {};
-  if (defaultModuleOptions.default != null) {
-    defaultModuleOptions = defaultModuleOptions.default;
-  }
-
-  // For backwards compatibility with Lisk modules.
-  targetModule.options = objectAssignDeep({}, defaultModuleOptions, moduleConfig);
-  targetModule.appConfig = appConfig;
   try {
-    await targetModule.load(channel, targetModule.options, logger, targetModule.appConfig);
+    await targetModule.load(channel, targetModule.options, targetModule.appConfig);
   } catch (error) {
     logger.error(error);
     process.exit(1);

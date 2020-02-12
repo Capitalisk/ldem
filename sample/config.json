@@ -58,49 +58,6 @@
     },
     "foo": {
       "modulePath": "sample/modules/foo.js"
-    },
-    "capitalisk": {
-      "database": "capitalisk_test",
-      "broadcasts": {
-        "active": true,
-        "broadcastInterval": 5000,
-        "releaseLimit": 25
-      },
-      "transactions": {
-        "maxTransactionsPerQueue": 1000
-      },
-      "forging": {
-        "force": false,
-        "delegates": []
-      },
-      "syncing": {
-        "active": true
-      },
-      "loading": {
-        "loadPerIteration": 5000,
-        "rebuildUpToRound": null
-      },
-      "exceptions": {
-        "blockRewards": [],
-        "senderPublicKey": [],
-        "signatures": [],
-        "signSignature": [],
-        "multisignatures": [],
-        "votes": [],
-        "inertTransactions": [],
-        "rounds": {},
-        "precedent": { "disableDappTransfer": 0, "disableDappTransaction": 0 },
-        "ignoreDelegateListCacheForRounds": [],
-        "blockVersions": {},
-        "roundVotes": [],
-        "recipientLeadingZero": {},
-        "recipientExceedingUint64": {},
-        "duplicatedSignatures": {},
-        "transactionWithNullByte": []
-      }
-    },
-    "http_api": {
-      "httpPort": 7000
     }
   }
 }

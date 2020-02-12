@@ -25,11 +25,15 @@ class LDEM {
     let componentsConfig = appConfig.base.components;
     let loggerConfig = componentsConfig.logger;
 
-    Object.values(appConfig.modules).forEach((moduleConfig) => {
+    let rawModuleList = Object.keys(appConfig.modules);
+
+    for (let moduleName of rawModuleList) {
+      appConfig.modules[moduleName] = objectAssignDeep({}, appConfig.base, appConfig.modules[moduleName]);
+      let moduleConfig = appConfig.modules[moduleName];
       if (moduleConfig.modulePath != null) {
         moduleConfig.modulePath = path.resolve(rootDirPath, moduleConfig.modulePath);
       }
-    });
+    }
 
     const Logger = require(loggerConfig.loggerLibPath);
 
@@ -41,7 +45,12 @@ class LDEM {
       processType: 'master'
     });
 
-    let moduleList = Object.keys(appConfig.modules).filter(moduleName => !!appConfig.modules[moduleName].modulePath);
+    let moduleList = rawModuleList.filter(
+      moduleName => (
+        !!appConfig.modules[moduleName].modulePath &&
+        appConfig.modules[moduleName].moduleEnabled
+      )
+    );
     let moduleSet = new Set(moduleList);
     let dependentMap = {};
     let moduleProcesses = {};

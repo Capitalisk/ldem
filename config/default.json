@@ -5,6 +5,7 @@
     "moduleEnabled": true,
     "ipcTimeout": 10000,
     "respawnDelay": 10000,
+    "appReadyDelay": 2000,
     "allowPublishingWithoutAlias": false,
     "defaultTargetModuleAlias": "chain",
     "components": {

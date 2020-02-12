@@ -272,6 +272,8 @@ class LDEM {
         logger.debug(`Process ${moduleProc.pid} of module ${moduleProc.moduleAlias} is ready`);
       }
 
+      await wait(appConfig.base.appReadyDelay);
+
       let result;
       for (let moduleAlias of orderedProcNames) {
         let moduleProc = moduleProcesses[moduleAlias];

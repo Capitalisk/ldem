@@ -167,7 +167,7 @@ class Channel extends AsyncStreamEmitter {
       await handler(event);
       this.unsubscribe(targetChannel, onceHandler);
     };
-    this.subscribe(targetChannel, onceHandler);
+    await this.subscribe(targetChannel, onceHandler);
   }
 
   publish(channel, data) {

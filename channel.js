@@ -191,7 +191,7 @@ class Channel extends AsyncStreamEmitter {
       );
     }
     let targetChannel = this._getTargetChannel(locatorInfo);
-    this.exchange.transmitPublish(targetChannel, data);
+    this.exchange.transmitPublish(targetChannel, {data});
   }
 
   async invoke(action, data) {

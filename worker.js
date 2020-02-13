@@ -5,11 +5,6 @@ const querystring = require('querystring');
 const eetase = require('eetase');
 eetase(process);
 
-(async () => {
-  await process.listener('disconnect').once();
-  process.exit();
-})();
-
 const socketClusterServer = require('socketcluster-server');
 const fs = require('fs');
 const argv = require('minimist')(process.argv.slice(2));
@@ -19,6 +14,11 @@ const SOCKET_REPLACED_CODE = 4500;
 
 const MODULE_ALIAS = argv['ldem-module-alias'];
 let ipcTimeout = argv['ldem-ipc-timeout'];
+
+(async () => {
+  await process.listener('disconnect').once();
+  process.exit();
+})();
 
 (async () => {
   let masterInitResult;

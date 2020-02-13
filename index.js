@@ -147,12 +147,17 @@ class LDEM {
               await moduleProc.listener('message').once(ipcTimeout);
             } catch (error) {
               logger.error(
-                `Did not receive moduleReady event from worker of ${moduleAlias} module after relaunch`
+                `Did not receive a moduleReady event from ${
+                  moduleAlias
+                } module worker before timeout of ${
+                  ipcTimeout
+                } milliseconds after respawn`
               );
               moduleProc.kill();
               return;
             }
             logger.debug(`Process ${moduleProc.pid} of module ${moduleAlias} is ready after respawn`);
+            await wait(appConfig.base.appReadyDelay);
             moduleProc.sendAppReady();
             return;
           }
@@ -265,7 +270,14 @@ class LDEM {
         try {
           // Listen for the 'moduleReady' event.
           await moduleProc.listener('message').once(ipcTimeout);
-        } catch (error) {
+        } catch (err) {
+          let error = new Error(
+            `Did not receive a moduleReady event from the ${
+              moduleAlias
+            } module before timeout of ${
+              ipcTimeout
+            } milliseconds`
+          );
           logger.fatal(error);
           process.exit(1);
         }

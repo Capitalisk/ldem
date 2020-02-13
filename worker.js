@@ -170,8 +170,11 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
 
   try {
     await httpServer.listener('listening').once(ipcTimeout);
-  } catch (error) {
-    logger.error(error);
+  } catch (err) {
+    let error = new Error(
+      `IPC server on module ${MODULE_ALIAS} failed to listen before timeout of ${ipcTimeout} milliseconds`
+    );
+    logger.fatal(error);
     process.exit(1);
   }
 
@@ -183,8 +186,11 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   let result;
   try {
     result = await process.listener('message').once(ipcTimeout);
-  } catch (error) {
-    logger.error(error);
+  } catch (err) {
+    let error = new Error(
+      `The ${MODULE_ALIAS} module did not receive a masterHandshake event before timeout of ${ipcTimeout} milliseconds`
+    );
+    logger.fatal(error);
     process.exit(1);
   }
 
@@ -220,7 +226,7 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   try {
     await targetModule.load(channel, targetModule.options, targetModule.appConfig);
   } catch (error) {
-    logger.error(error);
+    logger.fatal(error);
     process.exit(1);
   }
 

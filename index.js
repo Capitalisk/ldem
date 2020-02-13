@@ -5,6 +5,7 @@ const objectAssignDeep = require('object-assign-deep');
 const wait = require('./wait');
 
 const CWD = process.cwd();
+const PROJECT_MAIN_DIR_PATH = path.dirname(require.main.filename);
 const WORKER_PATH = path.join(__dirname, 'worker.js');
 
 const defaultConfig = require('./config/default.json');
@@ -21,7 +22,7 @@ class LDEM {
     );
 
     let appConfig = objectAssignDeep({}, defaultConfig, config);
-    let rootDirPath = appConfig.base.rootDirPath || CWD;
+    let rootDirPath = appConfig.base.rootDirPath || PROJECT_MAIN_DIR_PATH;
     let componentsConfig = appConfig.base.components;
     let loggerConfig = componentsConfig.logger;
 
@@ -61,27 +62,31 @@ class LDEM {
       for (let moduleAlias of moduleList) {
         let moduleConfig = objectAssignDeep({}, appConfig.base, appConfig.modules[moduleAlias]);
         let workerCWDPath = moduleConfig.workerCWDPath || CWD;
-        let execOptions = {
-          env: {...process.env},
-          execArgv: process.execArgv,
-          cwd: workerCWDPath
-        };
+
         let workerArgs = [
           '--ldem-module-alias',
           moduleAlias,
           '--ldem-ipc-timeout',
           ipcTimeout
         ];
+        let execOptions = {
+          env: {...process.env},
+          execArgv: process.execArgv,
+          cwd: workerCWDPath
+        };
+
         let launchModuleProcess = async (prevModuleProcess) => {
           if (prevModuleProcess) {
             logger.debug(`Relaunching process of ${moduleAlias} module...`);
           } else {
             logger.debug(`Launching process of ${moduleAlias} module...`);
           }
+
           let moduleProc = fork(WORKER_PATH, workerArgs, execOptions);
           eetase(moduleProc);
           moduleProc.moduleAlias = moduleAlias;
           moduleProc.moduleConfig = moduleConfig;
+
           moduleProc.send({
             event: 'masterInit',
             appConfig,

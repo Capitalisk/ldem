@@ -63,12 +63,6 @@
           "ip": "testnet-seed-05.lisk.io",
           "wsPort": 7001
         }
-      ],
-      "fixedPeers": [
-        {
-          "ip": "18.212.59.239",
-          "wsPort": 7001
-        }
       ]
     }
   }

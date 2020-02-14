@@ -3,7 +3,7 @@
     "rootDirPath": null,
     "workerCWDPath": null,
     "moduleEnabled": true,
-    "ipcTimeout": 30000,
+    "ipcTimeout": 60000,
     "respawnDelay": 10000,
     "appReadyDelay": 2000,
     "allowPublishingWithoutAlias": false,

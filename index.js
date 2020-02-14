@@ -38,8 +38,6 @@ class LDEM {
 
     const Logger = require(loggerConfig.loggerLibPath);
 
-    let ipcTimeout = appConfig.base.ipcTimeout;
-
     let logger = new Logger({
       ...loggerConfig,
       processStream: process,
@@ -67,7 +65,7 @@ class LDEM {
           '--ldem-module-alias',
           moduleAlias,
           '--ldem-ipc-timeout',
-          ipcTimeout
+          moduleConfig.ipcTimeout
         ];
         let execOptions = {
           env: {...process.env},
@@ -120,7 +118,7 @@ class LDEM {
 
           let workerHandshake;
           try {
-            [workerHandshake] = await moduleProc.listener('message').once(ipcTimeout);
+            [workerHandshake] = await moduleProc.listener('message').once(moduleConfig.ipcTimeout);
           } catch (error) {
             logger.fatal(error);
             process.exit(1);
@@ -158,13 +156,13 @@ class LDEM {
             // Listen for the 'moduleReady' event.
             let moduleReadyPacket;
             try {
-              [moduleReadyPacket] = await moduleProc.listener('message').once(ipcTimeout);
+              [moduleReadyPacket] = await moduleProc.listener('message').once(moduleConfig.ipcTimeout);
             } catch (error) {
               logger.error(
                 `Did not receive a moduleReady event from ${
                   moduleAlias
                 } module worker before timeout of ${
-                  ipcTimeout
+                  moduleConfig.ipcTimeout
                 } milliseconds after respawn`
               );
               moduleProc.kill();
@@ -293,13 +291,15 @@ class LDEM {
         let moduleReadyPacket;
         try {
           // Listen for the 'moduleReady' event.
-          [moduleReadyPacket] = await moduleProc.listener('message').once(ipcTimeout);
+          [moduleReadyPacket] = await moduleProc.listener('message').once(
+            moduleProc.moduleConfig.ipcTimeout
+          );
         } catch (err) {
           let error = new Error(
             `Did not receive a moduleReady event from the ${
               moduleAlias
             } module before timeout of ${
-              ipcTimeout
+              moduleProc.moduleConfig.ipcTimeout
             } milliseconds`
           );
           logger.fatal(error);

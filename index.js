@@ -93,6 +93,7 @@ class LDEM {
 
           (async () => {
             for await (let [code, signal] of moduleProc.listener('exit')) {
+              moduleProc.killAllListeners();
               let signalMessage;
               if (signal) {
                 signalMessage = ` and signal ${signal}`;
@@ -119,7 +120,12 @@ class LDEM {
           let workerHandshake;
           try {
             [workerHandshake] = await moduleProc.listener('message').once(moduleConfig.ipcTimeout);
-          } catch (error) {
+          } catch (err) {
+            let error = new Error(
+              `The master process did not receive a workerHandshake packet from the ${
+                moduleAlias
+              } module before timeout of ${moduleConfig.ipcTimeout} milliseconds`
+            );
             logger.fatal(error);
             process.exit(1);
           }
@@ -133,11 +139,11 @@ class LDEM {
             process.exit(1);
           }
 
-          moduleProc.sendMasterHandshake = function() {
+          moduleProc.sendMasterHandshake = function(dependencies, dependents) {
             moduleProc.send({
               event: 'masterHandshake',
-              dependencies: moduleProc.dependencies,
-              dependents: moduleProc.dependents
+              dependencies,
+              dependents
             });
           };
           moduleProc.sendAppReady = function() {
@@ -147,12 +153,12 @@ class LDEM {
           };
 
           if (prevModuleProcess) {
-            moduleProc.dependents = prevModuleProcess.dependents;
             moduleProc.dependencies = prevModuleProcess.dependencies;
+            moduleProc.dependents = prevModuleProcess.dependents;
             moduleProc.targetDependencies = prevModuleProcess.targetDependencies;
 
             moduleProcesses[moduleAlias] = moduleProc;
-            moduleProc.sendMasterHandshake();
+            moduleProc.sendMasterHandshake(moduleProc.dependencies, moduleProc.dependents);
             // Listen for the 'moduleReady' event.
             let moduleReadyPacket;
             try {
@@ -166,6 +172,7 @@ class LDEM {
                 } milliseconds after respawn`
               );
               moduleProc.kill();
+
               return;
             }
             if (!moduleReadyPacket || moduleReadyPacket.event !== 'moduleReady') {
@@ -180,6 +187,7 @@ class LDEM {
             logger.debug(`Process ${moduleProc.pid} of module ${moduleAlias} is ready after respawn`);
             await wait(appConfig.base.appReadyDelay);
             moduleProc.sendAppReady();
+
             return;
           }
 
@@ -287,7 +295,7 @@ class LDEM {
 
       for (let moduleAlias of orderedProcNames) {
         let moduleProc = moduleProcesses[moduleAlias];
-        moduleProc.sendMasterHandshake();
+        moduleProc.sendMasterHandshake(moduleProc.dependencies, moduleProc.dependents);
         let moduleReadyPacket;
         try {
           // Listen for the 'moduleReady' event.

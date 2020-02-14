@@ -170,7 +170,7 @@ class Channel extends AsyncStreamEmitter {
     await this.subscribe(targetChannel, onceHandler);
   }
 
-  publish(channel, data) {
+  publish(channel, data, info) {
     let locatorInfo = this._getLocatorInfo(channel);
     if (!this.allowPublishingWithoutAlias && !locatorInfo.hasAlias) {
       throw new Error(
@@ -191,7 +191,7 @@ class Channel extends AsyncStreamEmitter {
       );
     }
     let targetChannel = this._getTargetChannel(locatorInfo);
-    this.exchange.transmitPublish(targetChannel, {data});
+    this.exchange.transmitPublish(targetChannel, {data, info});
   }
 
   async invoke(action, data) {
@@ -217,7 +217,7 @@ class Channel extends AsyncStreamEmitter {
     return targetSocket.invoke(locator, invokePacket);
   }
 
-  async invokePublic(action, data) {
+  async invokePublic(action, data, info) {
     let {targetModuleAlias, locator} = this._getLocatorInfo(action);
     let targetSocket = this.clients[targetModuleAlias] || this.inboundModuleSockets[targetModuleAlias];
     if (!targetSocket) {
@@ -235,7 +235,8 @@ class Channel extends AsyncStreamEmitter {
     }
     let invokePacket = {
       isPublic: true,
-      params: data
+      params: data,
+      info
     };
     return targetSocket.invoke(locator, invokePacket);
   }

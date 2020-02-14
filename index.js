@@ -87,12 +87,6 @@ class LDEM {
           moduleProc.moduleAlias = moduleAlias;
           moduleProc.moduleConfig = moduleConfig;
 
-          moduleProc.send({
-            event: 'masterInit',
-            appConfig,
-            moduleConfig
-          });
-
           (async () => {
             for await (let [error] of moduleProc.listener('error')) {
               logger.error(error);
@@ -118,14 +112,28 @@ class LDEM {
             }
           })();
 
-          let result;
+          moduleProc.send({
+            event: 'masterInit',
+            appConfig,
+            moduleConfig
+          });
+
+          let workerHandshake;
           try {
-            result = await moduleProc.listener('message').once(ipcTimeout);
+            [workerHandshake] = await moduleProc.listener('message').once(ipcTimeout);
           } catch (error) {
             logger.fatal(error);
             process.exit(1);
           }
-          let [workerHandshake] = result;
+          if (!workerHandshake || workerHandshake.event !== 'workerHandshake') {
+            let error = new Error(
+              `The master process expected to receive a workerHandshake packet from the ${
+                moduleAlias
+              } module - Instead, it received: ${workerHandshake}`
+            );
+            logger.fatal(error);
+            process.exit(1);
+          }
 
           moduleProc.sendMasterHandshake = function() {
             moduleProc.send({
@@ -148,8 +156,9 @@ class LDEM {
             moduleProcesses[moduleAlias] = moduleProc;
             moduleProc.sendMasterHandshake();
             // Listen for the 'moduleReady' event.
+            let moduleReadyPacket;
             try {
-              await moduleProc.listener('message').once(ipcTimeout);
+              [moduleReadyPacket] = await moduleProc.listener('message').once(ipcTimeout);
             } catch (error) {
               logger.error(
                 `Did not receive a moduleReady event from ${
@@ -160,6 +169,15 @@ class LDEM {
               );
               moduleProc.kill();
               return;
+            }
+            if (!moduleReadyPacket || moduleReadyPacket.event !== 'moduleReady') {
+              let error = new Error(
+                `The master process expected to receive a moduleReady packet from the respawned ${
+                  moduleAlias
+                } module - Instead, it received: ${moduleReadyPacket}`
+              );
+              logger.fatal(error);
+              process.exit(1);
             }
             logger.debug(`Process ${moduleProc.pid} of module ${moduleAlias} is ready after respawn`);
             await wait(appConfig.base.appReadyDelay);
@@ -272,9 +290,10 @@ class LDEM {
       for (let moduleAlias of orderedProcNames) {
         let moduleProc = moduleProcesses[moduleAlias];
         moduleProc.sendMasterHandshake();
+        let moduleReadyPacket;
         try {
           // Listen for the 'moduleReady' event.
-          await moduleProc.listener('message').once(ipcTimeout);
+          [moduleReadyPacket] = await moduleProc.listener('message').once(ipcTimeout);
         } catch (err) {
           let error = new Error(
             `Did not receive a moduleReady event from the ${
@@ -282,6 +301,15 @@ class LDEM {
             } module before timeout of ${
               ipcTimeout
             } milliseconds`
+          );
+          logger.fatal(error);
+          process.exit(1);
+        }
+        if (!moduleReadyPacket || moduleReadyPacket.event !== 'moduleReady') {
+          let error = new Error(
+            `The master process expected to receive a moduleReady packet from the ${
+              moduleAlias
+            } module - Instead, it received: ${moduleReadyPacket}`
           );
           logger.fatal(error);
           process.exit(1);

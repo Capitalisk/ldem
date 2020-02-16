@@ -23,5 +23,10 @@
     "object-assign-deep": "^0.4.0",
     "socketcluster-client": "^16.0.1",
     "socketcluster-server": "^16.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jondubois/ldem.git"
+  },
+  "homepage": "https://github.com/jondubois/ldem#readme"
 }

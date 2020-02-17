@@ -51,14 +51,21 @@
     "leasehold_app": {},
     "leasehold_net": {},
     "one": {
-      "modulePath": "sample/modules/one.js"
+      "modulePath": "sample/modules/one.js",
+      "description": "This is module one",
+      "customProperty": "Module one custom property"
     },
     "other": {
-      "modulePath": "sample/modules/one.js",
+      "moduleBase": "one",
       "description": "This module uses the one module as a template"
     },
     "two": {
       "modulePath": "sample/modules/two.js"
+    },
+    "three": {
+      "moduleBase": "other",
+      "modulePath": "sample/modules/three.js",
+      "customPropertyThree": "Module three custom property"
     },
     "foo": {
       "modulePath": "sample/modules/foo.js"

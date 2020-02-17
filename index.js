@@ -29,7 +29,37 @@ class LDEM {
     let rawModuleList = Object.keys(appConfig.modules);
 
     for (let moduleAlias of rawModuleList) {
-      appConfig.modules[moduleAlias] = objectAssignDeep({}, appConfig.base, appConfig.modules[moduleAlias]);
+      let plainModuleConfig = appConfig.modules[moduleAlias];
+
+      let computeConfig = function (currentAlias, currentConfig, visitedAliases) {
+        if (visitedAliases.has(currentAlias)) {
+          throw new Error(
+            `The module ${currentAlias} config had a cyclic dependency in its moduleBase`
+          );
+        }
+        visitedAliases.add(currentAlias);
+        if (currentConfig.moduleBase == null) {
+          // Base case
+          return objectAssignDeep({}, appConfig.base, currentConfig);
+        }
+        // Recursive case
+        let baseModuleAlias = currentConfig.moduleBase;
+        let baseConfig = appConfig.modules[baseModuleAlias];
+        if (!baseConfig) {
+          throw new Error(
+            `The moduleBase option of the ${
+              moduleAlias
+            } module config was invalid - Could not find a module with the alias ${
+              currentConfig.moduleBase
+            }`
+          );
+        }
+        let computedParentConfig = computeConfig(baseModuleAlias, baseConfig, visitedAliases);
+        return objectAssignDeep({}, computedParentConfig, currentConfig);
+      };
+
+      appConfig.modules[moduleAlias] = computeConfig(moduleAlias, plainModuleConfig, new Set());
+
       let moduleConfig = appConfig.modules[moduleAlias];
       if (moduleConfig.modulePath != null) {
         moduleConfig.modulePath = path.resolve(rootDirPath, moduleConfig.modulePath);

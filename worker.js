@@ -64,6 +64,7 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   // For backward compatibility.
   targetModule.options = targetModuleConfig;
   targetModule.appConfig = targetModuleAppConfig;
+  let redirects = appConfig.redirects;
 
   let targetModuleDependencies = TargetModuleClass.dependencies || targetModule.dependencies;
 
@@ -102,6 +103,7 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
         } module is not public`
       );
       request.error(error);
+
       return;
     }
     let result;
@@ -118,6 +120,7 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
       );
       rpcError.name = 'RPCError';
       request.error(rpcError);
+
       return;
     }
     request.end(result);
@@ -155,6 +158,14 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
           }
         })();
       }
+
+      (async () => {
+        for await (let request of socket.procedure('ping')) {
+          if (request.data.isWorkerAction) {
+            request.end();
+          }
+        }
+      })();
     }
   })();
 
@@ -195,14 +206,14 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   }
 
   let [masterHandshake] = result;
-  let {dependencies, dependents} = masterHandshake;
+  let {dependencies, dependents, appDependentMap} = masterHandshake;
 
   let channel = new Channel({
     moduleAlias: MODULE_ALIAS,
     moduleActions: moduleActionNames,
     dependencies,
     dependents,
-    redirects: appConfig.redirects,
+    redirects,
     modulePathFunction: getUnixSocketPath,
     exchange: agServer.exchange,
     inboundModuleSockets,
@@ -224,7 +235,7 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   })();
 
   try {
-    await targetModule.load(channel, targetModule.options, targetModule.appConfig);
+    await targetModule.load(channel, targetModule.options, targetModule.appConfig, appDependentMap);
   } catch (error) {
     logger.fatal(error);
     process.exit(1);

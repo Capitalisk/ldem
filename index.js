@@ -139,11 +139,12 @@ class LDEM {
             process.exit(1);
           }
 
-          moduleProc.sendMasterHandshake = function(dependencies, dependents) {
+          moduleProc.sendMasterHandshake = function(dependencies, dependents, appDependentMap) {
             moduleProc.send({
               event: 'masterHandshake',
               dependencies,
-              dependents
+              dependents,
+              appDependentMap
             });
           };
           moduleProc.sendAppReady = function() {
@@ -158,7 +159,7 @@ class LDEM {
             moduleProc.targetDependencies = prevModuleProcess.targetDependencies;
 
             moduleProcesses[moduleAlias] = moduleProc;
-            moduleProc.sendMasterHandshake(moduleProc.dependencies, moduleProc.dependents);
+            moduleProc.sendMasterHandshake(moduleProc.dependencies, moduleProc.dependents, dependentMap);
             // Listen for the 'moduleReady' event.
             let moduleReadyPacket;
             try {
@@ -295,7 +296,7 @@ class LDEM {
 
       for (let moduleAlias of orderedProcNames) {
         let moduleProc = moduleProcesses[moduleAlias];
-        moduleProc.sendMasterHandshake(moduleProc.dependencies, moduleProc.dependents);
+        moduleProc.sendMasterHandshake(moduleProc.dependencies, moduleProc.dependents, dependentMap);
         let moduleReadyPacket;
         try {
           // Listen for the 'moduleReady' event.

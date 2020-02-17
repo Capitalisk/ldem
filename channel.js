@@ -194,7 +194,30 @@ class Channel extends AsyncStreamEmitter {
     this.exchange.transmitPublish(targetChannel, {data, info});
   }
 
-  async invoke(action, data) {
+  async invokeOnWorker(action, data, options) {
+    let {targetModuleAlias, locator} = this._getLocatorInfo(action);
+    if (!this._dependencyLookup[targetModuleAlias]) {
+      let error = new Error(
+        `Cannot invoke worker action ${
+          action
+        } on the ${
+          targetModuleAlias
+        } worker because it is not listed as a dependency of the ${
+          this.moduleAlias
+        } worker`
+      );
+      error.name = 'InvalidTargetWorkerError';
+      throw error;
+    }
+    let invokePacket = {
+      isWorkerAction: true,
+      params: data
+    };
+    let targetSocket = this.clients[targetModuleAlias];
+    return targetSocket.invoke(locator, invokePacket, options);
+  }
+
+  async invoke(action, data, options) {
     let {targetModuleAlias, locator} = this._getLocatorInfo(action);
     if (!this._dependencyLookup[targetModuleAlias]) {
       let error = new Error(
@@ -214,10 +237,10 @@ class Channel extends AsyncStreamEmitter {
       params: data
     };
     let targetSocket = this.clients[targetModuleAlias];
-    return targetSocket.invoke(locator, invokePacket);
+    return targetSocket.invoke(locator, invokePacket, options);
   }
 
-  async invokePublic(action, data, info) {
+  async invokePublic(action, data, options) {
     let {targetModuleAlias, locator} = this._getLocatorInfo(action);
     let targetSocket = this.clients[targetModuleAlias] || this.inboundModuleSockets[targetModuleAlias];
     if (!targetSocket) {
@@ -236,9 +259,9 @@ class Channel extends AsyncStreamEmitter {
     let invokePacket = {
       isPublic: true,
       params: data,
-      info
+      info: options
     };
-    return targetSocket.invoke(locator, invokePacket);
+    return targetSocket.invoke(locator, invokePacket, options);
   }
 
   _getTargetChannel({targetModuleAlias, locator}) {

@@ -44,11 +44,7 @@
       "maxInboundConnections": 100,
       "seedPeers": [
         {
-          "ip": "18.212.59.239",
-          "wsPort": 7001
-        },
-        {
-          "ip": "3.93.232.78",
+          "ip": "18.206.164.187",
           "wsPort": 7001
         },
         {

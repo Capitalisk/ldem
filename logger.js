@@ -1,3 +1,9 @@
+const fs = require('fs');
+const path = require('path');
+const promisify = require('util').promisify;
+const writeFile = promisify(fs.writeFile);
+const mkdirSync = fs.mkdirSync;
+
 const LOG_LEVELS = {
   fatal: 0,
   error: 1,
@@ -9,6 +15,22 @@ const LOG_LEVELS = {
 
 class Logger {
   constructor(options = {}) {
+    this.logFileName = options.logFileName;
+    this.fileLoggingEnabled = options.fileLoggingEnabled;
+    if (this.fileLoggingEnabled) {
+      let logDir = path.dirname(path.resolve(this.logFileName));
+      try {
+        mkdirSync(logDir, {recursive: true});
+      } catch (error) {
+        throw new Error(
+          `Failed to create log directory ${
+            logDir
+          } because of error ${
+            error.message
+          }`
+        );
+      }
+    }
     this.outputType = options.outputType || 'text';
     this.processAlias = options.processAlias || 'ldem';
     this.isMasterProcess = options.processType === 'master';
@@ -29,6 +51,33 @@ class Logger {
     }
   }
 
+  async _logToFile(message) {
+    try {
+      await writeFile(this.logFileName, `${message}\n`, {flag: 'a'});
+    } catch (error) {
+      throw new Error(
+        `Failed to write to log file at path ${
+          this.logFileName
+        } because of error ${
+          error.message
+        }`
+      );
+    }
+  }
+
+  _sanitizeLogEntry(entry) {
+    if (!entry || !entry.message) {
+      return entry;
+    }
+    let sanitizedEntry = {};
+    sanitizedEntry.name = entry.name;
+    sanitizedEntry.message = entry.message;
+    if (entry.stack) {
+      sanitizedEntry.stack = entry.stack;
+    }
+    return sanitizedEntry;
+  }
+
   _logJSON(type, entries) {
     if (this.processStream.connected || this.isMasterProcess) {
       let logPacket = {
@@ -37,28 +86,29 @@ class Logger {
         processType: this.processType,
         processId: this.processId,
         processAlias: this.processAlias,
-        entries: entries.map(entry => {
-          if (!entry || !entry.message) {
-            return entry;
-          }
-          let sanitizedEntry = {};
-          sanitizedEntry.name = entry.name;
-          sanitizedEntry.message = entry.message;
-          if (entry.stack) {
-            sanitizedEntry.stack = entry.stack;
-          }
-          return sanitizedEntry;
-        })
+        entries: entries.map(entry => this._sanitizeLogEntry(entry))
       };
+      let output = JSON.stringify(logPacket);
       let methodName = type === 'fatal' ? 'error' : type;
-      console[methodName].call(console, JSON.stringify(logPacket));
+      console[methodName].call(console, output);
+      if (this.fileLoggingEnabled) {
+        this._logToFile(output);
+      }
     }
   }
 
   _logText(type, entries) {
     if (this.processStream.connected || this.isMasterProcess) {
+      let header = `[${Date.now()},${type.toUpperCase()},${this.processInfo}]`;
+      let sanitizedEntries = entries.map(entry => this._sanitizeLogEntry(entry));
+      let output = [header].concat(sanitizedEntries);
       let methodName = type === 'fatal' ? 'error' : type;
-      console[methodName].apply(console, [`[${Date.now()},${type.toUpperCase()},${this.processInfo}]`].concat(entries));
+      console[methodName].apply(console, output);
+      if (this.fileLoggingEnabled) {
+        this._logToFile(
+          [header].concat(sanitizedEntries.map(part => JSON.stringify(part))).join(' ')
+        );
+      }
     }
   }
 

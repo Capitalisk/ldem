@@ -9,66 +9,96 @@ const LOG_LEVELS = {
 
 class Logger {
   constructor(options = {}) {
-    this.moduleAlias = options.moduleAlias;
+    this.outputType = options.outputType || 'text';
+    this.processAlias = options.processAlias || 'ldem';
     this.isMasterProcess = options.processType === 'master';
-    this.processInfo = options.processType;
+    this.processType = options.processType;
     this.processStream = options.processStream;
-    this.processInfo += `,${this.processStream.pid}`;
-    if (this.moduleAlias) {
-      this.processInfo += `,${this.moduleAlias}`;
+    this.processId = this.processStream.pid;
+    this.processInfo = this.processType;
+    this.processInfo += `,${this.processId}`;
+    if (this.processAlias) {
+      this.processInfo += `,${this.processAlias}`;
     }
     this.consoleLogLevel = LOG_LEVELS[options.consoleLogLevel];
+
+    if (this.outputType === 'json') {
+      this._log = this._logJSON;
+    } else {
+      this._log = this._logText;
+    }
+  }
+
+  _logJSON(type, entries) {
+    if (this.processStream.connected || this.isMasterProcess) {
+      let logPacket = {
+        timestamp: Date.now(),
+        type,
+        processType: this.processType,
+        processId: this.processId,
+        processAlias: this.processAlias,
+        entries: entries.map(entry => {
+          if (!entry || !entry.message) {
+            return entry;
+          }
+          let sanitizedEntry = {};
+          sanitizedEntry.name = entry.name;
+          sanitizedEntry.message = entry.message;
+          if (entry.stack) {
+            sanitizedEntry.stack = entry.stack;
+          }
+          return sanitizedEntry;
+        })
+      };
+      let methodName = type === 'fatal' ? 'error' : type;
+      console[methodName].call(console, JSON.stringify(logPacket));
+    }
+  }
+
+  _logText(type, entries) {
+    if (this.processStream.connected || this.isMasterProcess) {
+      let methodName = type === 'fatal' ? 'error' : type;
+      console[methodName].apply(console, [`[${Date.now()},${type.toUpperCase()},${this.processInfo}]`].concat(entries));
+    }
   }
 
   fatal(...args) {
-    if (this.processStream.connected || this.isMasterProcess) {
-      console.error.apply(console, [`[${Date.now()},FATAL,${this.processInfo}]`].concat(args));
-    }
+    this._log('fatal', args);
   }
 
   error(...args) {
     if (this.consoleLogLevel < LOG_LEVELS.error) {
       return;
     }
-    if (this.processStream.connected || this.isMasterProcess) {
-      console.error.apply(console, [`[${Date.now()},ERROR,${this.processInfo}]`].concat(args));
-    }
+    this._log('error', args);
   }
 
   warn(...args) {
     if (this.consoleLogLevel < LOG_LEVELS.warn) {
       return;
     }
-    if (this.processStream.connected || this.isMasterProcess) {
-      console.error.apply(console, [`[${Date.now()},WARN,${this.processInfo}]`].concat(args));
-    }
+    this._log('warn', args);
   }
 
   info(...args) {
     if (this.consoleLogLevel < LOG_LEVELS.info) {
       return;
     }
-    if (this.processStream.connected || this.isMasterProcess) {
-      console.info.apply(console, [`[${Date.now()},INFO,${this.processInfo}]`].concat(args));
-    }
+    this._log('info', args);
   }
 
   debug(...args) {
     if (this.consoleLogLevel < LOG_LEVELS.debug) {
       return;
     }
-    if (this.processStream.connected || this.isMasterProcess) {
-      console.debug.apply(console, [`[${Date.now()},DEBUG,${this.processInfo}]`].concat(args));
-    }
+    this._log('debug', args);
   }
 
   trace(...args) {
     if (this.consoleLogLevel < LOG_LEVELS.trace) {
       return;
     }
-    if (this.processStream.connected || this.isMasterProcess) {
-      console.trace.apply(console, [`[${Date.now()},TRACE,${this.processInfo}]`].concat(args));
-    }
+    this._log('trace', args);
   }
 }
 

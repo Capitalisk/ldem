@@ -10,6 +10,7 @@
     "defaultTargetModuleAlias": "chain",
     "components": {
       "logger": {
+        "outputType": "text",
         "loggerLibPath": "./logger",
         "logFileName": "./logs/ldem.log",
         "consoleLogLevel": "debug",

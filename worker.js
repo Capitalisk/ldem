@@ -40,7 +40,7 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
     ...loggerConfig,
     processStream: process,
     processType: 'worker',
-    moduleAlias: MODULE_ALIAS
+    processAlias: MODULE_ALIAS
   });
 
   let TargetModuleClass = require(moduleConfig.modulePath);

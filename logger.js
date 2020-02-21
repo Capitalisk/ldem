@@ -17,20 +17,6 @@ class Logger {
   constructor(options = {}) {
     this.logFileName = options.logFileName;
     this.fileLoggingEnabled = options.fileLoggingEnabled;
-    if (this.fileLoggingEnabled) {
-      let logDir = path.dirname(path.resolve(this.logFileName));
-      try {
-        mkdirSync(logDir, {recursive: true});
-      } catch (error) {
-        throw new Error(
-          `Failed to create log directory ${
-            logDir
-          } because of error ${
-            error.message
-          }`
-        );
-      }
-    }
     this.outputType = options.outputType || 'text';
     this.processAlias = options.processAlias || 'ldem';
     this.isMasterProcess = options.processType === 'master';
@@ -46,8 +32,25 @@ class Logger {
 
     if (this.outputType === 'json') {
       this._log = this._logJSON;
+      this._logToConsole = this._logJSONToConsole;
     } else {
       this._log = this._logText;
+      this._logToConsole = this._logTextToConsole;
+    }
+
+    if (this.fileLoggingEnabled) {
+      let logDir = path.dirname(path.resolve(this.logFileName));
+      try {
+        mkdirSync(logDir, {recursive: true});
+      } catch (error) {
+        throw new Error(
+          `Failed to create log directory ${
+            logDir
+          } because of error: ${
+            error.message
+          }`
+        );
+      }
     }
   }
 
@@ -58,7 +61,7 @@ class Logger {
       throw new Error(
         `Failed to write to log file at path ${
           this.logFileName
-        } because of error ${
+        } because of error: ${
           error.message
         }`
       );
@@ -78,32 +81,42 @@ class Logger {
     return sanitizedEntry;
   }
 
+  _logJSONToConsole(type, entries) {
+    let logPacket = {
+      timestamp: Date.now(),
+      type,
+      processType: this.processType,
+      processId: this.processId,
+      processAlias: this.processAlias,
+      entries: entries.map(entry => this._sanitizeLogEntry(entry))
+    };
+    let output = JSON.stringify(logPacket);
+    let methodName = type === 'fatal' ? 'error' : type;
+    console[methodName].call(console, output);
+    return output;
+  }
+
   _logJSON(type, entries) {
     if (this.processStream.connected || this.isMasterProcess) {
-      let logPacket = {
-        timestamp: Date.now(),
-        type,
-        processType: this.processType,
-        processId: this.processId,
-        processAlias: this.processAlias,
-        entries: entries.map(entry => this._sanitizeLogEntry(entry))
-      };
-      let output = JSON.stringify(logPacket);
-      let methodName = type === 'fatal' ? 'error' : type;
-      console[methodName].call(console, output);
+      let output = this._logJSONToConsole(type, entries);
       if (this.fileLoggingEnabled) {
         this._logToFile(output);
       }
     }
   }
 
+  _logTextToConsole(type, entries) {
+    let header = `[${Date.now()},${type.toUpperCase()},${this.processInfo}]`;
+    let sanitizedEntries = entries.map(entry => this._sanitizeLogEntry(entry));
+    let output = [header].concat(sanitizedEntries);
+    let methodName = type === 'fatal' ? 'error' : type;
+    console[methodName].apply(console, output);
+    return {header, sanitizedEntries};
+  }
+
   _logText(type, entries) {
     if (this.processStream.connected || this.isMasterProcess) {
-      let header = `[${Date.now()},${type.toUpperCase()},${this.processInfo}]`;
-      let sanitizedEntries = entries.map(entry => this._sanitizeLogEntry(entry));
-      let output = [header].concat(sanitizedEntries);
-      let methodName = type === 'fatal' ? 'error' : type;
-      console[methodName].apply(console, output);
+      let {header, sanitizedEntries} = this._logTextToConsole(type, entries);
       if (this.fileLoggingEnabled) {
         this._logToFile(
           [header].concat(sanitizedEntries.map(part => JSON.stringify(part))).join(' ')

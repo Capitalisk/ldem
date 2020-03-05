@@ -15,6 +15,9 @@ class TwoModule {
     return {
       doSomething: {
         handler: (action) => 222
+      },
+      greeting: {
+        handler: (action) => `Hello, this is module ${this.alias}`
       }
     };
   }

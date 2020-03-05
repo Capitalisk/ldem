@@ -16,6 +16,9 @@ class OneModule {
       doSomething: {
         handler: (action) => action.params.number + 1,
         isPublic: true
+      },
+      greeting: {
+        handler: (action) => `Hello, this is module ${this.alias}`
       }
     };
   }

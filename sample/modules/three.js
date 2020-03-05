@@ -4,7 +4,7 @@ class ThreeModule {
   }
 
   get dependencies() {
-    return ['two'];
+    return ['two', 'special'];
   }
 
   get events() {
@@ -17,6 +17,9 @@ class ThreeModule {
 
   async load(channel, options) {
     console.log(`Module ${this.alias} options:`, options);
+
+    let result = await channel.invoke('special:greeting');
+    console.log('REDIRECTED MODULE RESULT:', result);
   }
 
   async unload() {}

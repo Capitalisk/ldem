@@ -63,6 +63,9 @@
       "modulePath": "sample/modules/two.js"
     },
     "three": {
+      "moduleRedirects": {
+        "special": "one"
+      },
       "moduleBase": "other",
       "modulePath": "sample/modules/three.js",
       "customPropertyThree": "Module three custom property"

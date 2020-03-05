@@ -64,7 +64,7 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   // For backward compatibility.
   targetModule.options = targetModuleConfig;
   targetModule.appConfig = targetModuleAppConfig;
-  let redirects = appConfig.redirects;
+  let moduleRedirects = targetModuleConfig.moduleRedirects;
 
   let targetModuleDependencies = TargetModuleClass.dependencies || targetModule.dependencies;
 
@@ -211,9 +211,9 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   let channel = new Channel({
     moduleAlias: MODULE_ALIAS,
     moduleActions: moduleActionNames,
+    moduleRedirects,
     dependencies,
     dependents,
-    redirects,
     modulePathFunction: getUnixSocketPath,
     exchange: agServer.exchange,
     inboundModuleSockets,

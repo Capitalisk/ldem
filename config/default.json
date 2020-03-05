@@ -8,6 +8,11 @@
     "appReadyDelay": 2000,
     "allowPublishingWithoutAlias": false,
     "defaultTargetModuleAlias": "chain",
+    "moduleRedirects": {
+      "app": "leasehold_app",
+      "network": "leasehold_net",
+      "interchain": "leasehold_app"
+    },
     "components": {
       "logger": {
         "fileLoggingEnabled": true,
@@ -18,11 +23,6 @@
         "fileLogLevel": "error"
       }
     }
-  },
-  "redirects": {
-    "app": "leasehold_app",
-    "network": "leasehold_net",
-    "interchain": "leasehold_app"
   },
   "modules": {
     "leasehold_app": {

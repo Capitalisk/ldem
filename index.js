@@ -229,10 +229,10 @@ class LDEM {
           } else {
             for (let dependencyName of workerHandshake.dependencies) {
               let targetDependencyName;
-              if (appConfig.redirects[dependencyName] == null) {
+              if (moduleConfig.moduleRedirects[dependencyName] == null) {
                 targetDependencyName = dependencyName;
               } else {
-                targetDependencyName = appConfig.redirects[dependencyName];
+                targetDependencyName = moduleConfig.moduleRedirects[dependencyName];
               }
               if (!moduleSet.has(targetDependencyName)) {
                 let error = new Error(
@@ -247,7 +247,7 @@ class LDEM {
           }
 
           let targetDependencies = moduleProc.dependencies.map(
-            dep => appConfig.redirects[dep] == null ? dep : appConfig.redirects[dep]
+            dep => moduleConfig.moduleRedirects[dep] == null ? dep : moduleConfig.moduleRedirects[dep]
           );
           // This accounts for redirects.
           moduleProc.targetDependencies = [...new Set(targetDependencies)];

@@ -10,7 +10,7 @@ class Channel extends AsyncStreamEmitter {
       moduleActions,
       dependencies,
       dependents,
-      redirects,
+      moduleRedirects,
       modulePathFunction,
       exchange,
       inboundModuleSockets,
@@ -23,7 +23,7 @@ class Channel extends AsyncStreamEmitter {
     this.moduleAlias = moduleAlias;
     this.dependencies = dependencies || [];
     this.dependents = dependents;
-    this.redirects = redirects;
+    this.moduleRedirects = moduleRedirects;
     this.clients = {};
     this.inboundModuleSockets = inboundModuleSockets;
     this.subscribeTimeout = subscribeTimeout;
@@ -33,8 +33,8 @@ class Channel extends AsyncStreamEmitter {
     this._dependencyLookup = {};
 
     for (let dependencyName of this.dependencies) {
-      if (this.redirects[dependencyName] != null) {
-        dependencyName = this.redirects[dependencyName];
+      if (this.moduleRedirects[dependencyName] != null) {
+        dependencyName = this.moduleRedirects[dependencyName];
       }
       this._dependencyLookup[dependencyName] = true;
       let client = socketClusterClient.create({
@@ -286,8 +286,8 @@ class Channel extends AsyncStreamEmitter {
       locator = parts.slice(1).join(':');
       hasAlias = true;
     }
-    if (this.redirects[targetModuleAlias] != null) {
-      targetModuleAlias = this.redirects[targetModuleAlias];
+    if (this.moduleRedirects[targetModuleAlias] != null) {
+      targetModuleAlias = this.moduleRedirects[targetModuleAlias];
     }
     return {targetModuleAlias, locator, hasAlias};
   }

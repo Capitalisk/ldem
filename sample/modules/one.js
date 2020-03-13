@@ -1,6 +1,7 @@
 class OneModule {
-  constructor({alias}) {
+  constructor({alias, configUpdates}) {
     this.alias = alias;
+    this.configUpdates = configUpdates;
   }
 
   get dependencies() {

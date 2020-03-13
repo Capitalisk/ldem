@@ -27,7 +27,7 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   } catch (error) {
     process.exit(1);
   }
-  let [{moduleConfig, appConfig}] = masterInitResult;
+  let [{appConfig, moduleConfig, moduleConfigUpdates}] = masterInitResult;
 
   // Update ipcTimeout using the config option at the module scope
   ipcTimeout = moduleConfig.ipcTimeout;
@@ -59,6 +59,7 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
     logger,
     alias: MODULE_ALIAS,
     config: targetModuleConfig,
+    configUpdates: moduleConfigUpdates,
     appConfig: targetModuleAppConfig
   });
   // For backward compatibility.

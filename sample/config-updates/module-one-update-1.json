@@ -1,0 +1,12 @@
+{
+  "id": "update-one-1",
+  "type": "module",
+  "target": "one",
+  "criteria": {
+    "baseChainHeight": 100
+  },
+  "change": {
+    "description": "Module one config was updated",
+    "newProperty": "This property was added as part of config update"
+  }
+}

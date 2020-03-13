@@ -2,6 +2,11 @@ const fork = require('child_process').fork;
 const path = require('path');
 const eetase = require('eetase');
 const objectAssignDeep = require('object-assign-deep');
+const fs = require('fs');
+const util = require('util');
+const readdir = util.promisify(fs.readdir);
+const readFile = util.promisify(fs.readFile);
+const WritableConsumableStream = require('writable-consumable-stream');
 const wait = require('./wait');
 
 const CWD = process.cwd();
@@ -88,7 +93,7 @@ class LDEM {
       let launchingModulesPromises = [];
 
       for (let moduleAlias of moduleList) {
-        let moduleConfig = objectAssignDeep({}, appConfig.base, appConfig.modules[moduleAlias]);
+        let moduleConfig = appConfig.modules[moduleAlias];
         let workerCWDPath = moduleConfig.workerCWDPath || CWD;
 
         let workerArgs = [
@@ -114,6 +119,44 @@ class LDEM {
           eetase(moduleProc);
           moduleProc.moduleAlias = moduleAlias;
           moduleProc.moduleConfig = moduleConfig;
+          moduleProc.readyEventStream = new WritableConsumableStream();
+
+          (async () => {
+            for await (let [packet] of moduleProc.listener('message')) {
+              if (packet && packet.event === 'moduleReady') {
+                moduleProc.readyEventStream.write(packet);
+              }
+            }
+          })();
+
+          if (moduleConfig.moduleConfigUpdatesPath) {
+            let configUpdateFiles = await readdir(moduleConfig.moduleConfigUpdatesPath);
+            try {
+              let allConfigUpdates = await Promise.all(
+                configUpdateFiles.map(async (filePath) => {
+                  let content = await readFile(path.resolve(moduleConfig.moduleConfigUpdatesPath, filePath), {encoding: 'utf8'});
+                  return JSON.parse(content);
+                })
+              );
+              moduleProc.moduleConfigUpdates = allConfigUpdates.filter(
+                configUpdate => configUpdate.type === 'module' && configUpdate.target === moduleAlias
+              );
+            } catch (err) {
+              let error = new Error(
+                `Failed to load config updates for the ${
+                  moduleAlias
+                } module from the ${
+                  moduleConfig.moduleConfigUpdatesPath
+                } directory because of error: ${
+                  err.message
+                }`
+              );
+              logger.fatal(error);
+              process.exit(1);
+            }
+          } else {
+            moduleProc.moduleConfigUpdates = [];
+          }
 
           (async () => {
             for await (let [error] of moduleProc.listener('error')) {
@@ -124,6 +167,7 @@ class LDEM {
           (async () => {
             for await (let [code, signal] of moduleProc.listener('exit')) {
               moduleProc.killAllListeners();
+              moduleProc.readyEventStream.kill();
               let signalMessage;
               if (signal) {
                 signalMessage = ` and signal ${signal}`;
@@ -132,10 +176,10 @@ class LDEM {
               }
               logger.error(`Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage}`);
               if (moduleProc.moduleConfig.respawnDelay) {
-                logger.error(`Module ${moduleAlias} will be respawned in ${moduleProc.moduleConfig.respawnDelay} milliseconds...`);
+                logger.debug(`Module ${moduleAlias} will be respawned in ${moduleProc.moduleConfig.respawnDelay} milliseconds...`);
                 await wait(moduleProc.moduleConfig.respawnDelay);
               } else {
-                logger.error(`Module ${moduleAlias} will be respawned immediately`);
+                logger.debug(`Module ${moduleAlias} will be respawned immediately`);
               }
               launchModuleProcess(moduleProc);
             }
@@ -144,7 +188,8 @@ class LDEM {
           moduleProc.send({
             event: 'masterInit',
             appConfig,
-            moduleConfig
+            moduleConfig,
+            moduleConfigUpdates: moduleProc.moduleConfigUpdates
           });
 
           let workerHandshake;
@@ -191,9 +236,8 @@ class LDEM {
             moduleProcesses[moduleAlias] = moduleProc;
             moduleProc.sendMasterHandshake(moduleProc.dependencies, moduleProc.dependents, dependentMap);
             // Listen for the 'moduleReady' event.
-            let moduleReadyPacket;
             try {
-              [moduleReadyPacket] = await moduleProc.listener('message').once(moduleConfig.ipcTimeout);
+              await moduleProc.readyEventStream.once(moduleConfig.ipcTimeout);
             } catch (error) {
               logger.error(
                 `Did not receive a moduleReady event from ${
@@ -206,15 +250,7 @@ class LDEM {
 
               return;
             }
-            if (!moduleReadyPacket || moduleReadyPacket.event !== 'moduleReady') {
-              let error = new Error(
-                `The master process expected to receive a moduleReady packet from the respawned ${
-                  moduleAlias
-                } module - Instead, it received: ${moduleReadyPacket}`
-              );
-              logger.fatal(error);
-              process.exit(1);
-            }
+
             logger.debug(`Process ${moduleProc.pid} of module ${moduleAlias} is ready after respawn`);
             await wait(appConfig.base.appReadyDelay);
             moduleProc.sendAppReady();
@@ -327,10 +363,9 @@ class LDEM {
       for (let moduleAlias of orderedProcNames) {
         let moduleProc = moduleProcesses[moduleAlias];
         moduleProc.sendMasterHandshake(moduleProc.dependencies, moduleProc.dependents, dependentMap);
-        let moduleReadyPacket;
         try {
           // Listen for the 'moduleReady' event.
-          [moduleReadyPacket] = await moduleProc.listener('message').once(
+          await moduleProc.readyEventStream.once(
             moduleProc.moduleConfig.ipcTimeout
           );
         } catch (err) {
@@ -340,15 +375,6 @@ class LDEM {
             } module before timeout of ${
               moduleProc.moduleConfig.ipcTimeout
             } milliseconds`
-          );
-          logger.fatal(error);
-          process.exit(1);
-        }
-        if (!moduleReadyPacket || moduleReadyPacket.event !== 'moduleReady') {
-          let error = new Error(
-            `The master process expected to receive a moduleReady packet from the ${
-              moduleAlias
-            } module - Instead, it received: ${moduleReadyPacket}`
           );
           logger.fatal(error);
           process.exit(1);

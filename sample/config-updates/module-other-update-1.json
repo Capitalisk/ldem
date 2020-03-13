@@ -7,6 +7,6 @@
   },
   "change": {
     "description": "Module other config was updated",
-    "newProperty": "This property was added as part of config update"
+    "newProperty": "This property was added as part of a config update"
   }
 }

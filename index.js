@@ -2,11 +2,8 @@ const fork = require('child_process').fork;
 const path = require('path');
 const eetase = require('eetase');
 const objectAssignDeep = require('object-assign-deep');
-const fs = require('fs');
-const util = require('util');
-const readdir = util.promisify(fs.readdir);
-const readFile = util.promisify(fs.readFile);
 const WritableConsumableStream = require('writable-consumable-stream');
+const AsyncStreamEmitter = require('async-stream-emitter');
 const wait = require('./wait');
 
 const CWD = process.cwd();
@@ -15,10 +12,13 @@ const WORKER_PATH = path.join(__dirname, 'worker.js');
 
 const defaultConfig = require('./config/default.json');
 
-class LDEM {
+class LDEM extends AsyncStreamEmitter {
   constructor(options) {
+    super();
+
     let {
-      config
+      config,
+      configUpdates
     } = options;
 
     defaultConfig.base.components.logger.loggerLibPath = path.resolve(
@@ -79,6 +79,8 @@ class LDEM {
       processType: 'master'
     });
 
+    this.logger = logger;
+
     let moduleList = rawModuleList.filter(
       moduleAlias => (
         !!appConfig.modules[moduleAlias].modulePath &&
@@ -120,43 +122,53 @@ class LDEM {
           moduleProc.moduleAlias = moduleAlias;
           moduleProc.moduleConfig = moduleConfig;
           moduleProc.readyEventStream = new WritableConsumableStream();
+          if (prevModuleProcess) {
+            moduleProc.moduleConfigUpdates = prevModuleProcess.moduleConfigUpdates;
+          } else {
+            moduleProc.moduleConfigUpdates = configUpdates.filter(
+              configUpdate => configUpdate.type === 'module' && configUpdate.target === moduleAlias
+            );
+          }
 
           (async () => {
             for await (let [packet] of moduleProc.listener('message')) {
-              if (packet && packet.event === 'moduleReady') {
-                moduleProc.readyEventStream.write(packet);
+              if (packet) {
+                if (packet.event === 'moduleReady') {
+                  moduleProc.readyEventStream.write(packet);
+                } else if (packet.event === 'moduleUpdate') {
+                  let updatedConfig = objectAssignDeep({}, config);
+                  let updateList = packet.updates || [];
+                  let updateIdSet = new Set();
+                  for (let update of updateList) {
+                    if (!update.id) {
+                      logger.error(
+                        `An update from module ${moduleAlias} did not have a valid id`
+                      );
+                      continue;
+                    }
+                    updateIdSet.add(update.id);
+                    if (!update.change) {
+                      logger.error(
+                        `The update ${update.id} from module ${moduleAlias} did not specify a valid change object`
+                      );
+                      continue;
+                    }
+                    let configChange = update.change;
+                    objectAssignDeep(moduleProc.moduleConfig, configChange);
+                    objectAssignDeep(updatedConfig.modules[moduleAlias], configChange);
+                  }
+                  moduleProc.moduleConfigUpdates = moduleProc.moduleConfigUpdates.filter(update => !updateIdSet.has(update.id));
+                  this.emit('moduleUpdate', {
+                    moduleAlias,
+                    updates: updateList,
+                    updatedModuleConfig: updatedConfig.modules[moduleAlias]
+                  });
+                  moduleProc.isUpdated = true;
+                  moduleProc.kill();
+                }
               }
             }
           })();
-
-          if (moduleConfig.moduleConfigUpdatesPath) {
-            let configUpdateFiles = await readdir(moduleConfig.moduleConfigUpdatesPath);
-            try {
-              let allConfigUpdates = await Promise.all(
-                configUpdateFiles.map(async (filePath) => {
-                  let content = await readFile(path.resolve(moduleConfig.moduleConfigUpdatesPath, filePath), {encoding: 'utf8'});
-                  return JSON.parse(content);
-                })
-              );
-              moduleProc.moduleConfigUpdates = allConfigUpdates.filter(
-                configUpdate => configUpdate.type === 'module' && configUpdate.target === moduleAlias
-              );
-            } catch (err) {
-              let error = new Error(
-                `Failed to load config updates for the ${
-                  moduleAlias
-                } module from the ${
-                  moduleConfig.moduleConfigUpdatesPath
-                } directory because of error: ${
-                  err.message
-                }`
-              );
-              logger.fatal(error);
-              process.exit(1);
-            }
-          } else {
-            moduleProc.moduleConfigUpdates = [];
-          }
 
           (async () => {
             for await (let [error] of moduleProc.listener('error')) {
@@ -175,7 +187,10 @@ class LDEM {
                 signalMessage = '';
               }
               logger.error(`Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage}`);
-              if (moduleProc.moduleConfig.respawnDelay) {
+              if (moduleProc.isUpdated) {
+                moduleProc.isUpdated = false;
+                logger.debug(`Module ${moduleAlias} will be respawned immediately as part of update`);
+              } else if (moduleProc.moduleConfig.respawnDelay) {
                 logger.debug(`Module ${moduleAlias} will be respawned in ${moduleProc.moduleConfig.respawnDelay} milliseconds...`);
                 await wait(moduleProc.moduleConfig.respawnDelay);
               } else {

@@ -2,6 +2,7 @@ class OneModule {
   constructor({alias, configUpdates}) {
     this.alias = alias;
     this.configUpdates = configUpdates;
+    console.log(`Module ${this.alias} config updates:`, this.configUpdates);
   }
 
   get dependencies() {
@@ -33,6 +34,16 @@ class OneModule {
     setInterval(() => {
       channel.publish(`${this.alias}:testEvent`, `This is module ${this.alias}`);
     }, 1000);
+
+    setTimeout(() => {
+      if (this.configUpdates.length) {
+        console.log(`Prepare to apply module ${this.alias} update: ${this.configUpdates[0].id}`);
+        process.send({
+          event: 'moduleUpdate',
+          updates: this.configUpdates
+        });
+      }
+    }, 4000);
   }
 
   async unload() {}

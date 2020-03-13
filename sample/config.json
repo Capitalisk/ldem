@@ -52,7 +52,6 @@
     "leasehold_net": {},
     "one": {
       "modulePath": "sample/modules/one.js",
-      "moduleConfigUpdatesPath": "sample/config-updates",
       "description": "This is module one",
       "customProperty": "Module one custom property"
     },

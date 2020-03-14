@@ -21,6 +21,10 @@ class LDEM extends AsyncStreamEmitter {
       configUpdates
     } = options;
 
+    if (!configUpdates) {
+      configUpdates = [];
+    }
+
     defaultConfig.base.components.logger.loggerLibPath = path.resolve(
       __dirname,
       defaultConfig.base.components.logger.loggerLibPath

@@ -54,9 +54,10 @@ const config = require(CONFIG_PATH);
       try {
         await writeFile(CONFIG_PATH, JSON.stringify(config, ' ', 2));
       } catch (err) {
-        throw new Error(
+        ldem.logger.fatal(
           `Failed to write update to config file at path ${CONFIG_PATH} because of error: ${err.message}`
         );
+        process.exit(1);
       }
       await Promise.all(
         updates.map(async (update) => {
@@ -65,7 +66,7 @@ const config = require(CONFIG_PATH);
             try {
               await unlink(filePath);
             } catch (err) {
-              throw new Error(
+              ldem.logger.error(
                 `Failed to delete old config update file at path ${filePath} because of error: ${err.message}`
               );
             }

@@ -85,6 +85,10 @@ class LDEM extends AsyncStreamEmitter {
 
     this.logger = logger;
 
+    logger.debug(
+      `Number of pending module updates: ${configUpdates.length}`
+    );
+
     let moduleList = rawModuleList.filter(
       moduleAlias => (
         !!appConfig.modules[moduleAlias].modulePath &&

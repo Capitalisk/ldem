@@ -29,15 +29,14 @@ const config = require(CONFIG_PATH);
           return update;
         })
       );
-    } catch (err) {
-      let error = new Error(
+    } catch (error) {
+      throw new Error(
         `Failed to load config updates from the ${
           CONFIG_UPDATES_DIR_PATH
         } directory because of error: ${
-          err.message
+          error.message
         }`
       );
-      throw error;
     }
   } else {
     configUpdates = [];

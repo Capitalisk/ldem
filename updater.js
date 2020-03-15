@@ -4,12 +4,10 @@ class Updater {
   }
 
   applyUpdates(updates) {
-    if (updates.length) {
-      this.processStream.send({
-        event: 'moduleUpdate',
-        updates
-      });
-    }
+    this.processStream.send({
+      event: 'moduleUpdate',
+      updates
+    });
   }
 }
 

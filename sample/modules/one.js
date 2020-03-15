@@ -1,7 +1,8 @@
 class OneModule {
-  constructor({alias, configUpdates}) {
+  constructor({alias, configUpdates, updater}) {
     this.alias = alias;
     this.configUpdates = configUpdates;
+    this.updater = updater;
     console.log(`Module ${this.alias} config updates:`, this.configUpdates);
   }
 
@@ -38,10 +39,7 @@ class OneModule {
     setTimeout(() => {
       if (this.configUpdates.length) {
         console.log(`Prepare to apply module ${this.alias} update: ${this.configUpdates[0].id}`);
-        process.send({
-          event: 'moduleUpdate',
-          updates: this.configUpdates
-        });
+        this.updater.applyUpdates(this.configUpdates);
       }
     }, 4000);
   }

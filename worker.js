@@ -7,6 +7,7 @@ eetase(process);
 
 const socketClusterServer = require('socketcluster-server');
 const fs = require('fs');
+const Updater = require('./updater');
 const argv = require('minimist')(process.argv.slice(2));
 
 const DEFAULT_MODULE_ALIAS = 'chain';
@@ -43,6 +44,10 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
     processAlias: MODULE_ALIAS
   });
 
+  let updater = new Updater({
+    processStream: process
+  });
+
   let TargetModuleClass = require(moduleConfig.modulePath);
 
   let defaultModuleConfig = TargetModuleClass.defaults || {};
@@ -60,7 +65,8 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
     alias: MODULE_ALIAS,
     config: targetModuleConfig,
     configUpdates: moduleConfigUpdates,
-    appConfig: targetModuleAppConfig
+    appConfig: targetModuleAppConfig,
+    updater
   });
   // For backward compatibility.
   targetModule.options = targetModuleConfig;

@@ -146,6 +146,12 @@ class LDEM extends AsyncStreamEmitter {
                 } else if (packet.event === 'moduleUpdate') {
                   let updatedConfig = objectAssignDeep({}, config);
                   let updateList = packet.updates || [];
+                  if (!updateList.length) {
+                    this.logger.error(
+                      `Module ${moduleAlias} provided an empty update list`
+                    );
+                    continue;
+                  }
                   let updateIdSet = new Set();
                   for (let update of updateList) {
                     if (!update.id) {

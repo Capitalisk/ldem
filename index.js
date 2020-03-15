@@ -143,7 +143,7 @@ class LDEM extends AsyncStreamEmitter {
               if (packet) {
                 if (packet.event === 'moduleReady') {
                   moduleProc.readyEventStream.write(packet);
-                } else if (packet.event === 'moduleUpdate') {
+                } else if (packet.event === 'moduleUpdates') {
                   let updatedConfig = objectAssignDeep({}, config);
                   let updateList = packet.updates || [];
                   if (!updateList.length) {
@@ -172,13 +172,25 @@ class LDEM extends AsyncStreamEmitter {
                     objectAssignDeep(updatedConfig.modules[moduleAlias], configChange);
                   }
                   moduleProc.moduleConfigUpdates = moduleProc.moduleConfigUpdates.filter(update => !updateIdSet.has(update.id));
-                  this.emit('moduleUpdate', {
+                  this.emit('moduleUpdates', {
                     moduleAlias,
                     updates: updateList,
                     updatedModuleConfig: updatedConfig.modules[moduleAlias]
                   });
                   moduleProc.isUpdated = true;
                   moduleProc.kill();
+                } else if (packet.event === 'moduleUpdatesFailure') {
+                  let updateList = packet.updates;
+                  let updateIds = updateList.map(update => update.id);
+                  let reason = packet.reason;
+                  logger.error(
+                    `Failed to update module ${moduleAlias} with updates [${updateIds.join(', ')}] because of reason: ${reason}`
+                  );
+                  this.emit('moduleUpdatesFailure', {
+                    moduleAlias,
+                    updates: updateList,
+                    reason
+                  });
                 }
               }
             }

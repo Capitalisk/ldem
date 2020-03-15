@@ -5,8 +5,16 @@ class Updater {
 
   applyUpdates(updates) {
     this.processStream.send({
-      event: 'moduleUpdate',
+      event: 'moduleUpdates',
       updates
+    });
+  }
+
+  notifyUpdatesFailure(updates, reason) {
+    this.processStream.send({
+      event: 'moduleUpdatesFailure',
+      updates,
+      reason
     });
   }
 }

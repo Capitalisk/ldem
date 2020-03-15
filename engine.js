@@ -49,7 +49,7 @@ const config = require(CONFIG_PATH);
   });
 
   (async () => {
-    for await (let {moduleAlias, updates, updatedModuleConfig} of ldem.listener('moduleUpdate')) {
+    for await (let {moduleAlias, updates, updatedModuleConfig} of ldem.listener('moduleUpdates')) {
       config.modules[moduleAlias] = updatedModuleConfig;
       try {
         await writeFile(CONFIG_PATH, JSON.stringify(config, ' ', 2));

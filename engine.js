@@ -18,13 +18,10 @@ const config = require(CONFIG_PATH);
   let configUpdates;
   let updateFilePaths = {};
   if (CONFIG_UPDATES_DIR_PATH) {
-    let configUpdateFiles;
     try {
-      configUpdateFiles = await readdir(CONFIG_UPDATES_DIR_PATH);
-    } catch (error) {
-      configUpdateFiles = [];
-    }
-    try {
+      let allFiles = await readdir(CONFIG_UPDATES_DIR_PATH);
+      let jsonFileRegex = /\.json$/;
+      let configUpdateFiles = allFiles.filter(fileName => jsonFileRegex.test(fileName));
       configUpdates = await Promise.all(
         configUpdateFiles.map(async (fileName) => {
           let filePath = path.resolve(CONFIG_UPDATES_DIR_PATH, fileName);

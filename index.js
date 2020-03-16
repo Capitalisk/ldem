@@ -198,7 +198,7 @@ class LDEM extends AsyncStreamEmitter {
                   let update = moduleProc.activeUpdate;
                   if (!update) {
                     this.logger.error(
-                      `Module ${moduleAlias} did not have any active update to merge`
+                      `Module ${moduleAlias} did not have an active update to merge`
                     );
                     continue;
                   }
@@ -215,7 +215,7 @@ class LDEM extends AsyncStreamEmitter {
                   let update = moduleProc.activeUpdate;
                   if (!update) {
                     this.logger.error(
-                      `Module ${moduleAlias} did not have any active update to revert`
+                      `Module ${moduleAlias} did not have an active update to revert`
                     );
                     continue;
                   }

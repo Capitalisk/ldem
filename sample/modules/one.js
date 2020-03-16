@@ -1,9 +1,9 @@
 class OneModule {
-  constructor({alias, configUpdates, updater}) {
+  constructor({alias, updates, updater}) {
     this.alias = alias;
-    this.configUpdates = configUpdates;
+    this.updates = updates;
     this.updater = updater;
-    console.log(`Module ${this.alias} config updates:`, this.configUpdates);
+    console.log(`Module ${this.alias} config updates:`, this.updates);
   }
 
   get dependencies() {
@@ -37,9 +37,10 @@ class OneModule {
     }, 1000);
 
     setTimeout(() => {
-      if (this.configUpdates.length) {
-        console.log(`Prepare to apply module ${this.alias} update: ${this.configUpdates[0].id}`);
-        this.updater.applyUpdates(this.configUpdates);
+      if (this.updates.length && !this.updater.activeUpdate) {
+        console.log(`Prepare to activate module ${this.alias} update: ${this.updates[0].id}`);
+        this.updater.activateUpdate(this.updates[0]);
+        this.updater.mergeActiveUpdate();
       }
     }, 4000);
   }

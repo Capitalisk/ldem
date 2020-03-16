@@ -15,15 +15,15 @@ const CONFIG_UPDATES_DIR_PATH = argv.u ? path.resolve(CWD, argv.u) : null;
 const config = require(CONFIG_PATH);
 
 (async () => {
-  let configUpdates;
+  let updates;
   let updateFilePaths = {};
   if (CONFIG_UPDATES_DIR_PATH) {
     try {
       let allFiles = await readdir(CONFIG_UPDATES_DIR_PATH);
       let jsonFileRegex = /\.json$/;
-      let configUpdateFiles = allFiles.filter(fileName => jsonFileRegex.test(fileName));
-      configUpdates = await Promise.all(
-        configUpdateFiles.map(async (fileName) => {
+      let updateFiles = allFiles.filter(fileName => jsonFileRegex.test(fileName));
+      updates = await Promise.all(
+        updateFiles.map(async (fileName) => {
           let filePath = path.resolve(CONFIG_UPDATES_DIR_PATH, fileName);
           let content = await readFile(filePath, {encoding: 'utf8'});
           let update = JSON.parse(content);
@@ -41,16 +41,16 @@ const config = require(CONFIG_PATH);
       );
     }
   } else {
-    configUpdates = [];
+    updates = [];
   }
 
   let ldem = new LDEM({
     config,
-    configUpdates
+    updates
   });
 
   (async () => {
-    for await (let {moduleAlias, updates, updatedModuleConfig} of ldem.listener('moduleUpdates')) {
+    for await (let {moduleAlias, update, updatedModuleConfig} of ldem.listener('mergeUpdate')) {
       config.modules[moduleAlias] = updatedModuleConfig;
       try {
         await writeFile(CONFIG_PATH, JSON.stringify(config, ' ', 2));
@@ -60,20 +60,16 @@ const config = require(CONFIG_PATH);
         );
         process.exit(1);
       }
-      await Promise.all(
-        updates.map(async (update) => {
-          let filePath = updateFilePaths[update.id];
-          if (filePath) {
-            try {
-              await unlink(filePath);
-            } catch (err) {
-              ldem.logger.error(
-                `Failed to delete old config update file at path ${filePath} because of error: ${err.message}`
-              );
-            }
-          }
-        })
-      );
+      let filePath = updateFilePaths[update.id];
+      if (filePath) {
+        try {
+          await unlink(filePath);
+        } catch (err) {
+          ldem.logger.error(
+            `Failed to delete old config update file at path ${filePath} because of error: ${err.message}`
+          );
+        }
+      }
     }
   })();
 

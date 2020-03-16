@@ -1,20 +1,26 @@
 class Updater {
-  constructor({processStream}) {
+  constructor({processStream, updates, activeUpdate}) {
     this.processStream = processStream;
+    this.updates = updates;
+    this.activeUpdate = activeUpdate;
   }
 
-  applyUpdates(updates) {
+  activateUpdate(update) {
     this.processStream.send({
-      event: 'moduleUpdates',
-      updates
+      event: 'activateUpdate',
+      update
     });
   }
 
-  notifyUpdatesFailure(updates, reason) {
+  mergeActiveUpdate() {
     this.processStream.send({
-      event: 'moduleUpdatesFailure',
-      updates,
-      reason
+      event: 'mergeActiveUpdate'
+    });
+  }
+
+  revertActiveUpdate() {
+    this.processStream.send({
+      event: 'revertActiveUpdate'
     });
   }
 }

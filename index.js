@@ -272,19 +272,19 @@ class LDEM extends AsyncStreamEmitter {
           moduleProc.send({
             event: 'masterInit',
             appConfig,
-            moduleConfig,
+            moduleConfig: moduleProc.moduleConfig,
             moduleUpdates: moduleProc.moduleUpdates,
             moduleActiveUpdate: moduleProc.activeUpdate
           });
 
           let workerHandshake;
           try {
-            [workerHandshake] = await moduleProc.listener('message').once(moduleConfig.ipcTimeout);
+            [workerHandshake] = await moduleProc.listener('message').once(moduleProc.moduleConfig.ipcTimeout);
           } catch (err) {
             let error = new Error(
               `The master process did not receive a workerHandshake packet from the ${
                 moduleAlias
-              } module before timeout of ${moduleConfig.ipcTimeout} milliseconds`
+              } module before timeout of ${moduleProc.moduleConfig.ipcTimeout} milliseconds`
             );
             logger.fatal(error);
             process.exit(1);
@@ -322,13 +322,13 @@ class LDEM extends AsyncStreamEmitter {
             moduleProc.sendMasterHandshake(moduleProc.dependencies, moduleProc.dependents, dependentMap);
             // Listen for the 'moduleReady' event.
             try {
-              await moduleProc.readyEventStream.once(moduleConfig.ipcTimeout);
+              await moduleProc.readyEventStream.once(moduleProc.moduleConfig.ipcTimeout);
             } catch (error) {
               logger.error(
                 `Did not receive a moduleReady event from ${
                   moduleAlias
                 } module worker before timeout of ${
-                  moduleConfig.ipcTimeout
+                  moduleProc.moduleConfig.ipcTimeout
                 } milliseconds after respawn`
               );
               moduleProc.kill();
@@ -350,10 +350,10 @@ class LDEM extends AsyncStreamEmitter {
           } else {
             for (let dependencyName of workerHandshake.dependencies) {
               let targetDependencyName;
-              if (moduleConfig.moduleRedirects[dependencyName] == null) {
+              if (moduleProc.moduleConfig.moduleRedirects[dependencyName] == null) {
                 targetDependencyName = dependencyName;
               } else {
-                targetDependencyName = moduleConfig.moduleRedirects[dependencyName];
+                targetDependencyName = moduleProc.moduleConfig.moduleRedirects[dependencyName];
               }
               if (!moduleSet.has(targetDependencyName)) {
                 let error = new Error(
@@ -368,7 +368,7 @@ class LDEM extends AsyncStreamEmitter {
           }
 
           let targetDependencies = moduleProc.dependencies.map(
-            dep => moduleConfig.moduleRedirects[dep] == null ? dep : moduleConfig.moduleRedirects[dep]
+            dep => moduleProc.moduleConfig.moduleRedirects[dep] == null ? dep : moduleProc.moduleConfig.moduleRedirects[dep]
           );
           // This accounts for redirects.
           moduleProc.targetDependencies = [...new Set(targetDependencies)];

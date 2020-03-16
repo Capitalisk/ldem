@@ -144,6 +144,91 @@ class LDEM extends AsyncStreamEmitter {
               currentUpdate => currentUpdate.type === 'module' && currentUpdate.target === moduleAlias
             );
           }
+          moduleProc.activateUpdate = (update) => {
+            if (!update) {
+              this.logger.error(
+                `Module ${moduleAlias} did not provide a valid update to activate`
+              );
+              return;
+            }
+            if (!update.id) {
+              logger.error(
+                `An update from module ${moduleAlias} did not have a valid id`
+              );
+              return;
+            }
+            if (!update.change) {
+              logger.error(
+                `The update ${update.id} from module ${moduleAlias} did not specify a valid change object`
+              );
+              return;
+            }
+            if (moduleProc.activeUpdate) {
+              this.logger.error(
+                `Module ${moduleAlias} could not activate update with id ${
+                  update.id
+                } because an existing update with id ${
+                  moduleProc.activeUpdate.id
+                } was already active and not merged`
+              );
+              return;
+            }
+            let configChange = update.change;
+            moduleProc.activeUpdate = update;
+            moduleProc.prevModuleConfig = objectAssignDeep({}, moduleProc.moduleConfig);
+            moduleProc.prevRawModuleConfig = objectAssignDeep({}, moduleProc.rawModuleConfig);
+            objectAssignDeep(moduleProc.moduleConfig, configChange);
+            objectAssignDeep(moduleProc.rawModuleConfig, configChange);
+
+            this.emit('activateUpdate', {
+              moduleAlias,
+              update,
+              updatedModuleConfig: moduleProc.rawModuleConfig
+            });
+            moduleProc.wasUpdated = true;
+            moduleProc.kill();
+          };
+
+          moduleProc.mergeActiveUpdate = () => {
+            let update = moduleProc.activeUpdate;
+            if (!update) {
+              this.logger.error(
+                `Module ${moduleAlias} did not have an active update to merge`
+              );
+              return;
+            }
+            moduleProc.moduleUpdates = moduleProc.moduleUpdates.filter(currentUpdate => currentUpdate.id !== update.id);
+            delete moduleProc.activeUpdate;
+            delete moduleProc.prevModuleConfig;
+            delete moduleProc.prevRawModuleConfig;
+            this.emit('mergeUpdate', {
+              moduleAlias,
+              update,
+              updatedModuleConfig: moduleProc.rawModuleConfig
+            });
+          };
+
+          moduleProc.revertActiveUpdate = () => {
+            let update = moduleProc.activeUpdate;
+            if (!update) {
+              this.logger.error(
+                `Module ${moduleAlias} did not have an active update to revert`
+              );
+              return;
+            }
+            moduleProc.moduleConfig = moduleProc.prevModuleConfig;
+            moduleProc.rawModuleConfig = moduleProc.prevRawModuleConfig;
+            delete moduleProc.activeUpdate;
+            delete moduleProc.prevModuleConfig;
+            delete moduleProc.prevRawModuleConfig;
+            this.emit('revertUpdate', {
+              moduleAlias,
+              update,
+              updatedModuleConfig: moduleProc.rawModuleConfig
+            });
+            moduleProc.wasReverted = true;
+            moduleProc.kill();
+          };
 
           (async () => {
             for await (let [packet] of moduleProc.listener('message')) {
@@ -152,85 +237,11 @@ class LDEM extends AsyncStreamEmitter {
                   moduleProc.readyEventStream.write(packet);
                 } else if (packet.event === 'activateUpdate') {
                   let update = packet.update;
-                  if (!update) {
-                    this.logger.error(
-                      `Module ${moduleAlias} did not provide a valid update to activate`
-                    );
-                    continue;
-                  }
-                  if (!update.id) {
-                    logger.error(
-                      `An update from module ${moduleAlias} did not have a valid id`
-                    );
-                    continue;
-                  }
-                  if (!update.change) {
-                    logger.error(
-                      `The update ${update.id} from module ${moduleAlias} did not specify a valid change object`
-                    );
-                    continue;
-                  }
-                  if (moduleProc.activeUpdate) {
-                    this.logger.error(
-                      `Module ${moduleAlias} could not activate update with id ${
-                        update.id
-                      } because an existing update with id ${
-                        moduleProc.activeUpdate.id
-                      } was already active and not merged`
-                    );
-                    continue;
-                  }
-                  let configChange = update.change;
-                  moduleProc.activeUpdate = update;
-                  moduleProc.prevModuleConfig = objectAssignDeep({}, moduleProc.moduleConfig);
-                  moduleProc.prevRawModuleConfig = objectAssignDeep({}, moduleProc.rawModuleConfig);
-                  objectAssignDeep(moduleProc.moduleConfig, configChange);
-                  objectAssignDeep(moduleProc.rawModuleConfig, configChange);
-
-                  this.emit('activateUpdate', {
-                    moduleAlias,
-                    update,
-                    updatedModuleConfig: moduleProc.rawModuleConfig
-                  });
-                  moduleProc.wasUpdated = true;
-                  moduleProc.kill();
+                  moduleProc.activateUpdate(update);
                 } else if (packet.event === 'mergeActiveUpdate') {
-                  let update = moduleProc.activeUpdate;
-                  if (!update) {
-                    this.logger.error(
-                      `Module ${moduleAlias} did not have an active update to merge`
-                    );
-                    continue;
-                  }
-                  moduleProc.moduleUpdates = moduleProc.moduleUpdates.filter(currentUpdate => currentUpdate.id !== update.id);
-                  delete moduleProc.activeUpdate;
-                  delete moduleProc.prevModuleConfig;
-                  delete moduleProc.prevRawModuleConfig;
-                  this.emit('mergeUpdate', {
-                    moduleAlias,
-                    update,
-                    updatedModuleConfig: moduleProc.rawModuleConfig
-                  });
+                  moduleProc.mergeActiveUpdate();
                 } else if (packet.event === 'revertActiveUpdate') {
-                  let update = moduleProc.activeUpdate;
-                  if (!update) {
-                    this.logger.error(
-                      `Module ${moduleAlias} did not have an active update to revert`
-                    );
-                    continue;
-                  }
-                  moduleProc.moduleConfig = moduleProc.prevModuleConfig;
-                  moduleProc.rawModuleConfig = moduleProc.prevRawModuleConfig;
-                  delete moduleProc.activeUpdate;
-                  delete moduleProc.prevModuleConfig;
-                  delete moduleProc.prevRawModuleConfig;
-                  this.emit('revertUpdate', {
-                    moduleAlias,
-                    update,
-                    updatedModuleConfig: moduleProc.rawModuleConfig
-                  });
-                  moduleProc.wasReverted = true;
-                  moduleProc.kill();
+                  moduleProc.revertActiveUpdate();
                 }
               }
             }
@@ -253,17 +264,20 @@ class LDEM extends AsyncStreamEmitter {
                 signalMessage = '';
               }
               logger.error(`Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage}`);
+              let isControlledRestart = moduleProc.wasUpdated || moduleProc.wasReverted;
               if (moduleProc.wasUpdated) {
-                moduleProc.wasUpdated = false;
                 logger.debug(`Module ${moduleAlias} will be respawned immediately as part of update`);
               } else if (moduleProc.wasReverted) {
-                moduleProc.wasReverted = false;
                 logger.debug(`Module ${moduleAlias} will be respawned immediately to revert the last update`);
               } else if (moduleProc.moduleConfig.respawnDelay) {
                 logger.debug(`Module ${moduleAlias} will be respawned in ${moduleProc.moduleConfig.respawnDelay} milliseconds...`);
                 await wait(moduleProc.moduleConfig.respawnDelay);
               } else {
                 logger.debug(`Module ${moduleAlias} will be respawned immediately`);
+              }
+              // If a process exits unexpectedly, revert any active update.
+              if (!isControlledRestart && moduleProc.activeUpdate) {
+                moduleProc.revertActiveUpdate();
               }
               launchModuleProcess(moduleProc);
             }

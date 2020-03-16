@@ -192,7 +192,7 @@ class LDEM extends AsyncStreamEmitter {
                     update,
                     updatedModuleConfig: moduleProc.rawModuleConfig
                   });
-                  moduleProc.respawnImmediately = true;
+                  moduleProc.wasUpdated = true;
                   moduleProc.kill();
                 } else if (packet.event === 'mergeActiveUpdate') {
                   let update = moduleProc.activeUpdate;
@@ -229,7 +229,7 @@ class LDEM extends AsyncStreamEmitter {
                     update,
                     updatedModuleConfig: moduleProc.rawModuleConfig
                   });
-                  moduleProc.respawnImmediately = true;
+                  moduleProc.wasReverted = true;
                   moduleProc.kill();
                 }
               }
@@ -253,9 +253,12 @@ class LDEM extends AsyncStreamEmitter {
                 signalMessage = '';
               }
               logger.error(`Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage}`);
-              if (moduleProc.respawnImmediately) {
-                moduleProc.respawnImmediately = false;
+              if (moduleProc.wasUpdated) {
+                moduleProc.wasUpdated = false;
                 logger.debug(`Module ${moduleAlias} will be respawned immediately as part of update`);
+              } else if (moduleProc.wasReverted) {
+                moduleProc.wasReverted = false;
+                logger.debug(`Module ${moduleAlias} will be respawned immediately to revert the last update`);
               } else if (moduleProc.moduleConfig.respawnDelay) {
                 logger.debug(`Module ${moduleAlias} will be respawned in ${moduleProc.moduleConfig.respawnDelay} milliseconds...`);
                 await wait(moduleProc.moduleConfig.respawnDelay);

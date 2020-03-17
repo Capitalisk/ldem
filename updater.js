@@ -16,6 +16,7 @@ class Updater {
     this.processStream.send({
       event: 'mergeActiveUpdate'
     });
+    delete this.activeUpdate;
   }
 
   revertActiveUpdate() {

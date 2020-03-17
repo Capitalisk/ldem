@@ -23,6 +23,7 @@ class Updater {
     this.processStream.send({
       event: 'revertActiveUpdate'
     });
+    delete this.activeUpdate;
   }
 }
 

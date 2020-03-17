@@ -263,15 +263,18 @@ class LDEM extends AsyncStreamEmitter {
               } else {
                 signalMessage = '';
               }
-              logger.error(`Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage}`);
               let isControlledRestart = moduleProc.wasUpdated || moduleProc.wasReverted;
-
-              // If a process exits unexpectedly, revert any active update.
-              if (!isControlledRestart && moduleProc.activeUpdate) {
-                logger.debug(
-                  `Update ${moduleProc.activeUpdate.id} of ${moduleAlias} module was reverted due to unexpected process exit`
-                );
-                moduleProc.revertActiveUpdate();
+              if (isControlledRestart) {
+                logger.debug(`Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage} as part of a controlled restart`);
+              } else {
+                logger.error(`Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage}`);
+                // If a process exits unexpectedly, revert any active update.
+                if (moduleProc.activeUpdate) {
+                  logger.debug(
+                    `Update ${moduleProc.activeUpdate.id} of ${moduleAlias} module was reverted due to unexpected process exit`
+                  );
+                  moduleProc.revertActiveUpdate();
+                }
               }
               if (moduleProc.wasUpdated) {
                 logger.debug(`Module ${moduleAlias} will be respawned immediately as part of update`);

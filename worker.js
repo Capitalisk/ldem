@@ -61,15 +61,23 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   let targetModuleConfig = objectAssignDeep({}, defaultModuleConfig, moduleConfig);
   let targetModuleAppConfig = appConfig;
 
-  let targetModule = new TargetModuleClass({
-    processStream: process,
-    logger,
-    alias: MODULE_ALIAS,
-    config: targetModuleConfig,
-    appConfig: targetModuleAppConfig,
-    updates: moduleUpdates,
-    updater
-  });
+  let targetModule;
+
+  try {
+    targetModule = new TargetModuleClass({
+      processStream: process,
+      logger,
+      alias: MODULE_ALIAS,
+      config: targetModuleConfig,
+      appConfig: targetModuleAppConfig,
+      updates: moduleUpdates,
+      updater
+    });
+  } catch (error) {
+    logger.fatal(error);
+    process.exit(1);
+  }
+
   // For backward compatibility.
   targetModule.options = targetModuleConfig;
   targetModule.appConfig = targetModuleAppConfig;

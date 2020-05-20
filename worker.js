@@ -136,6 +136,11 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
         } module failed because of the following error: ${error.message}`
       );
       rpcError.name = 'RPCError';
+      rpcError.sourceError = {
+        ...error,
+        message: error.message,
+        stack: error.stack
+      };
       request.error(rpcError);
 
       return;

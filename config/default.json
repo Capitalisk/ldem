@@ -42,8 +42,8 @@
       "respawnDelay": 0,
       "peerSelectionPluginPath": "../leasehold-interchain",
       "wsPort": 7001,
-      "maxOutboundConnections": 40,
-      "maxInboundConnections": 100,
+      "maxOutboundConnections": 10,
+      "maxInboundConnections": 20,
       "seedPeers": [
         {
           "ip": "18.206.164.187",

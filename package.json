@@ -18,12 +18,12 @@
     "async-stream-emitter": "^4.0.0",
     "eetase": "^4.0.0",
     "leasehold-app": "^3.0.0",
-    "leasehold-interchain": "^1.0.1",
-    "leasehold-net": "^3.1.1",
+    "leasehold-interchain": "^2.0.0",
+    "leasehold-net": "^4.0.0",
     "minimist": "^1.2.0",
     "object-assign-deep": "^0.4.0",
     "socketcluster-client": "^16.0.1",
-    "socketcluster-server": "^16.0.0",
+    "socketcluster-server": "^16.0.1",
     "writable-consumable-stream": "^2.0.0"
   },
   "repository": {

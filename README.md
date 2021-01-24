@@ -1,4 +1,4 @@
-# ldem
+# LDEM
 Multi-process controller optimized for operating a node with many Lisk modules. Ideal for lisk-dex nodes.
 
 ### Command to run with sample config:
@@ -6,4 +6,3 @@ Multi-process controller optimized for operating a node with many Lisk modules. 
 ```
 node engine.js -c sample/config.json
 ```
-

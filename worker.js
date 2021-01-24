@@ -82,11 +82,12 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   targetModule.options = targetModuleConfig;
   targetModule.appConfig = targetModuleAppConfig;
   let moduleRedirects = targetModuleConfig.moduleRedirects;
+  let unixSocketPrefix = targetModuleConfig.unixSocketNamePrefix || 'ldem';
 
   let targetModuleDependencies = TargetModuleClass.dependencies || targetModule.dependencies;
 
   function getUnixSocketPath(moduleAlias) {
-    return `/tmp/ldex-${moduleAlias}.sock`;
+    return `/tmp/${unixSocketPrefix}_${moduleAlias}.sock`;
   }
 
   let ipcPath = getUnixSocketPath(MODULE_ALIAS);

@@ -6,6 +6,7 @@
     "ipcTimeout": 60000,
     "respawnDelay": 10000,
     "appReadyDelay": 2000,
+    "unixSocketNamePrefix": "ldem",
     "allowPublishingWithoutAlias": false,
     "defaultTargetModuleAlias": "chain",
     "moduleRedirects": {

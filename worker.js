@@ -111,8 +111,9 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
     let moduleAction = targetModule.actions[actionName];
     let isActionPublic = moduleAction.isPublic;
     let moduleActionHandler = moduleAction.handler;
+    let requestData = request.data || {};
 
-    if (request.data.isPublic && !isActionPublic) {
+    if (requestData.isPublic && !isActionPublic) {
       let error = new Error(
         `The ${
           actionName
@@ -127,7 +128,8 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
     let result;
     try {
       result = await moduleActionHandler({
-        params: request.data.params
+        isPublic: !!requestData.isPublic,
+        params: requestData.params
       });
     } catch (error) {
       logger.debug(error);
@@ -184,7 +186,8 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
 
       (async () => {
         for await (let request of socket.procedure('ping')) {
-          if (request.data.isWorkerAction) {
+          let requestData = request.data || {};
+          if (requestData.isWorkerAction) {
             request.end();
           }
         }

@@ -261,7 +261,7 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   })();
 
   try {
-    // Call the load function in the mounted node_module
+    // Call the load function in the spawned node_module
     await targetModule.load(channel, targetModule.options, targetModule.appConfig, appDependentMap);
   } catch (error) {
     logger.fatal(error);

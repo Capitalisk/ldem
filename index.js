@@ -13,6 +13,24 @@ const WORKER_PATH = path.join(__dirname, 'worker.js');
 const defaultConfig = require('./config/default.json');
 
 /**
+ * @typedef Components
+ * @type {Object}
+ * @property {Object} logger
+ * @property {Boolean} logger.fileLoggingEnabled
+ * @property {String} logger.outputType
+ * @property {String} logger.loggerLibPath
+ * @property {String} logger.logFileName
+ * @property {{('fatal'|'error'|'warn'|'info'|'trace')}} logger.consoleLogLevel
+ * @property {{('fatal'|'error'|'warn'|'info'|'trace')}} logger.fileLogLevel
+ * @property {Object} dal
+ * @property {String} dal.libPath
+ * @property {Object} dal.connection
+ * @property {String} dal.connection.host
+ * @property {String} dal.connection.user
+ * @property {String} dal.connection.password
+ * @property {String} dal.connection.database
+ * @property {String} dal.connection.port
+ *
  * @typedef Base
  * @type {Object}
  * @property {String} rootDirPath
@@ -28,28 +46,13 @@ const defaultConfig = require('./config/default.json');
  * @property {String} moduleRedirects.app
  * @property {String} moduleRedirects.network
  * @property {String} moduleRedirects.interchain
- * @property {Object} components
- * @property {Object} components.logger
- * @property {Boolean} components.logger.fileLoggingEnabled
- * @property {String} components.logger.outputType
- * @property {String} components.logger.loggerLibPath
- * @property {String} components.logger.logFileName
- * @property {{('fatal'|'error'|'warn'|'info'|'trace')}} components.logger.consoleLogLevel
- * @property {{('fatal'|'error'|'warn'|'info'|'trace')}} components.logger.fileLogLevel
+ * @property {Components} components
  *
  * @typedef Module
  * @type {Object}
  * @property {String} modulePath
  * @property {String} genesisPath
- * @property {Object} components
- * @property {Object} components.dal
- * @property {String} components.dal.libPath
- * @property {Object} components.dal.connection
- * @property {String} components.dal.connection.host
- * @property {String} components.dal.connection.user
- * @property {String} components.dal.connection.password
- * @property {String} components.dal.connection.database
- * @property {String} components.dal.connection.port
+ * @property {Components} components
  * @property {Number} respawnDelay
  * @property {Number} defaultHTTPPort
  * @property {Object} defaultWSPort

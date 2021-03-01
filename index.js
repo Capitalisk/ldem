@@ -12,7 +12,60 @@ const WORKER_PATH = path.join(__dirname, 'worker.js');
 
 const defaultConfig = require('./config/default.json');
 
+/**
+ * @typedef Chain
+ * @type {Object}
+ * @property {string} modulePath
+ * @property {string} genesisPath
+ * @property {Object} components
+ * @property {Object} components.dal
+ * @property {string} components.dal.libPath
+ * @property {Object} components.dal.connection
+ * @property {string} components.dal.connection.host
+ * @property {string} components.dal.connection.user
+ * @property {string} components.dal.connection.password
+ * @property {string} components.dal.connection.database
+ * @property {string} components.dal.connection.port
+ */
+
+/**
+ * @typedef App
+ * @type {Object}
+ * @property {Object} nodeInfo
+ * @property {string} nodeInfo.version
+ * @property {string} nodeInfo.protocolVersion
+ * @property {string} nodeInfo.nethash
+ * @property {string} nodeInfo.broadhash
+ */
+
+ /**
+  * @typedef Net
+  * @type {Object}
+  * @property {string} wsPort
+  * @property {string} wsMaxMessageRate
+  * @property {string} wsMaxMessageRatePenalty
+  * @property {string} wsMaxPayloadInbound
+  * @property {string} wsMaxPayloadOutbound
+  * @property {string} maxPeerInfoSize
+  * @property {Array<Object<ip: string, wsPort: string>} seedPeers
+  */
+
 class LDEM extends AsyncStreamEmitter {
+  /**
+   * Options
+   * @param {Object} options
+   * @param {Object} options.config Config
+   * @param {Object} options.config.base Base config
+   * @param {Number} options.config.base.ipcTimeout
+   * @param {Object} options.config.base.moduleRedirects
+   * @param {Object} options.config.base.components
+   * @param {Object} options.config.base.components.logger
+   * @param {string} options.config.base.components.logger.logFileName Path and lame of the logfile
+   * @param {('fatal'|'error'|'warn'|'info'|'trace')} options.config.base.components.logger.consoleLogLevel What the logger should display
+   * @param {('fatal'|'error'|'warn'|'info'|'trace')} options.config.base.components.logger.fileLogLevel What the logger should display
+   * @param {Object.<string, (Chain|App|Net)} options.config.modules Modules config
+   * @param {Array.<{}>} options.updates Array of updates
+   */
   constructor(options) {
     super();
 
@@ -37,9 +90,15 @@ class LDEM extends AsyncStreamEmitter {
 
     let rawModuleList = Object.keys(appConfig.modules);
 
+    // Loops over every module in modules and mounts the config, and path to the node_module
     for (let moduleAlias of rawModuleList) {
       let plainModuleConfig = appConfig.modules[moduleAlias];
 
+      /**
+       * @param {string} currentAlias current module
+       * @param {Object} currentConfig Config of current alias
+       * @param {Set} visitedAliases Set of past aliases
+       */
       let computeConfig = function (currentAlias, currentConfig, visitedAliases) {
         if (visitedAliases.has(currentAlias)) {
           throw new Error(
@@ -125,6 +184,7 @@ class LDEM extends AsyncStreamEmitter {
             logger.debug(`Launching process of ${moduleAlias} module...`);
           }
 
+          // Spawn a nodejs worker.js for the module
           let moduleProc = fork(WORKER_PATH, workerArgs, execOptions);
           eetase(moduleProc);
           moduleProc.moduleAlias = moduleAlias;

@@ -26,9 +26,7 @@ const defaultConfig = require('./config/default.json');
  * @property {string} components.dal.connection.password
  * @property {string} components.dal.connection.database
  * @property {string} components.dal.connection.port
- */
-
-/**
+ *
  * @typedef App
  * @type {Object}
  * @property {Object} nodeInfo
@@ -36,19 +34,23 @@ const defaultConfig = require('./config/default.json');
  * @property {string} nodeInfo.protocolVersion
  * @property {string} nodeInfo.nethash
  * @property {string} nodeInfo.broadhash
+ *
+ * @typedef Net
+ * @type {Object}
+ * @property {string} wsPort
+ * @property {string} wsMaxMessageRate
+ * @property {string} wsMaxMessageRatePenalty
+ * @property {string} wsMaxPayloadInbound
+ * @property {string} wsMaxPayloadOutbound
+ * @property {string} maxPeerInfoSize
+ * @property {Array<seedPeer>} seedPeers
+ *
+ * @typedef seedPeer
+ * @type {Object}
+ * @property {string} ip
+ * @property {string} wsPort
+ *
  */
-
- /**
-  * @typedef Net
-  * @type {Object}
-  * @property {string} wsPort
-  * @property {string} wsMaxMessageRate
-  * @property {string} wsMaxMessageRatePenalty
-  * @property {string} wsMaxPayloadInbound
-  * @property {string} wsMaxPayloadOutbound
-  * @property {string} maxPeerInfoSize
-  * @property {Array<Object<ip: string, wsPort: string>} seedPeers
-  */
 
 class LDEM extends AsyncStreamEmitter {
   /**
@@ -69,10 +71,7 @@ class LDEM extends AsyncStreamEmitter {
   constructor(options) {
     super();
 
-    let {
-      config,
-      updates
-    } = options;
+    let { config, updates } = options;
 
     if (!updates) {
       updates = [];
@@ -80,7 +79,7 @@ class LDEM extends AsyncStreamEmitter {
 
     defaultConfig.base.components.logger.loggerLibPath = path.resolve(
       __dirname,
-      defaultConfig.base.components.logger.loggerLibPath
+      defaultConfig.base.components.logger.loggerLibPath,
     );
 
     let appConfig = objectAssignDeep({}, defaultConfig, config);
@@ -99,10 +98,14 @@ class LDEM extends AsyncStreamEmitter {
        * @param {Object} currentConfig Config of current alias
        * @param {Set} visitedAliases Set of past aliases
        */
-      let computeConfig = function (currentAlias, currentConfig, visitedAliases) {
+      let computeConfig = function (
+        currentAlias,
+        currentConfig,
+        visitedAliases,
+      ) {
         if (visitedAliases.has(currentAlias)) {
           throw new Error(
-            `The module ${currentAlias} config had a cyclic dependency in its moduleBase`
+            `The module ${currentAlias} config had a cyclic dependency in its moduleBase`,
           );
         }
         visitedAliases.add(currentAlias);
@@ -115,22 +118,29 @@ class LDEM extends AsyncStreamEmitter {
         let baseConfig = appConfig.modules[baseModuleAlias];
         if (!baseConfig) {
           throw new Error(
-            `The moduleBase option of the ${
-              moduleAlias
-            } module config was invalid - Could not find a module with the alias ${
-              currentConfig.moduleBase
-            }`
+            `The moduleBase option of the ${moduleAlias} module config was invalid - Could not find a module with the alias ${currentConfig.moduleBase}`,
           );
         }
-        let computedParentConfig = computeConfig(baseModuleAlias, baseConfig, visitedAliases);
+        let computedParentConfig = computeConfig(
+          baseModuleAlias,
+          baseConfig,
+          visitedAliases,
+        );
         return objectAssignDeep({}, computedParentConfig, currentConfig);
       };
 
-      appConfig.modules[moduleAlias] = computeConfig(moduleAlias, plainModuleConfig, new Set());
+      appConfig.modules[moduleAlias] = computeConfig(
+        moduleAlias,
+        plainModuleConfig,
+        new Set(),
+      );
 
       let moduleConfig = appConfig.modules[moduleAlias];
       if (moduleConfig.modulePath != null) {
-        moduleConfig.modulePath = path.resolve(rootDirPath, moduleConfig.modulePath);
+        moduleConfig.modulePath = path.resolve(
+          rootDirPath,
+          moduleConfig.modulePath,
+        );
       }
     }
 
@@ -139,20 +149,17 @@ class LDEM extends AsyncStreamEmitter {
     let logger = new Logger({
       ...loggerConfig,
       processStream: process,
-      processType: 'master'
+      processType: 'master',
     });
 
     this.logger = logger;
 
-    logger.debug(
-      `Number of pending module updates: ${updates.length}`
-    );
+    logger.debug(`Number of pending module updates: ${updates.length}`);
 
     let moduleList = rawModuleList.filter(
-      moduleAlias => (
+      (moduleAlias) =>
         !!appConfig.modules[moduleAlias].modulePath &&
-        appConfig.modules[moduleAlias].moduleEnabled
-      )
+        appConfig.modules[moduleAlias].moduleEnabled,
     );
     let moduleSet = new Set(moduleList);
     let dependentMap = {};
@@ -169,12 +176,12 @@ class LDEM extends AsyncStreamEmitter {
           '--ldem-module-alias',
           moduleAlias,
           '--ldem-ipc-timeout',
-          moduleConfig.ipcTimeout
+          moduleConfig.ipcTimeout,
         ];
         let execOptions = {
-          env: {...process.env},
+          env: { ...process.env },
           execArgv: process.execArgv,
-          cwd: workerCWDPath
+          cwd: workerCWDPath,
         };
 
         let launchModuleProcess = async (prevModuleProcess) => {
@@ -196,54 +203,62 @@ class LDEM extends AsyncStreamEmitter {
             moduleProc.moduleUpdates = prevModuleProcess.moduleUpdates;
             moduleProc.activeUpdate = prevModuleProcess.activeUpdate;
             moduleProc.prevModuleConfig = prevModuleProcess.prevModuleConfig;
-            moduleProc.prevRawModuleConfig = prevModuleProcess.prevRawModuleConfig;
+            moduleProc.prevRawModuleConfig =
+              prevModuleProcess.prevRawModuleConfig;
           } else {
             moduleProc.moduleConfig = moduleConfig;
-            moduleProc.rawModuleConfig = objectAssignDeep({}, config.modules[moduleAlias]);
+            moduleProc.rawModuleConfig = objectAssignDeep(
+              {},
+              config.modules[moduleAlias],
+            );
             moduleProc.moduleUpdates = updates.filter(
-              currentUpdate => currentUpdate.type === 'module' && currentUpdate.target === moduleAlias
+              (currentUpdate) =>
+                currentUpdate.type === 'module' &&
+                currentUpdate.target === moduleAlias,
             );
           }
           moduleProc.activateUpdate = (update) => {
             if (!update) {
               this.logger.error(
-                `Module ${moduleAlias} did not provide a valid update to activate`
+                `Module ${moduleAlias} did not provide a valid update to activate`,
               );
               return;
             }
             if (!update.id) {
               logger.error(
-                `An update from module ${moduleAlias} did not have a valid id`
+                `An update from module ${moduleAlias} did not have a valid id`,
               );
               return;
             }
             if (!update.change) {
               logger.error(
-                `The update ${update.id} from module ${moduleAlias} did not specify a valid change object`
+                `The update ${update.id} from module ${moduleAlias} did not specify a valid change object`,
               );
               return;
             }
             if (moduleProc.activeUpdate) {
               this.logger.error(
-                `Module ${moduleAlias} could not activate update with id ${
-                  update.id
-                } because an existing update with id ${
-                  moduleProc.activeUpdate.id
-                } was already active and not merged`
+                `Module ${moduleAlias} could not activate update with id ${update.id} because an existing update with id ${moduleProc.activeUpdate.id} was already active and not merged`,
               );
               return;
             }
             let configChange = update.change;
             moduleProc.activeUpdate = update;
-            moduleProc.prevModuleConfig = objectAssignDeep({}, moduleProc.moduleConfig);
-            moduleProc.prevRawModuleConfig = objectAssignDeep({}, moduleProc.rawModuleConfig);
+            moduleProc.prevModuleConfig = objectAssignDeep(
+              {},
+              moduleProc.moduleConfig,
+            );
+            moduleProc.prevRawModuleConfig = objectAssignDeep(
+              {},
+              moduleProc.rawModuleConfig,
+            );
             objectAssignDeep(moduleProc.moduleConfig, configChange);
             objectAssignDeep(moduleProc.rawModuleConfig, configChange);
 
             this.emit('activateUpdate', {
               moduleAlias,
               update,
-              updatedModuleConfig: moduleProc.rawModuleConfig
+              updatedModuleConfig: moduleProc.rawModuleConfig,
             });
             moduleProc.wasUpdated = true;
             moduleProc.kill();
@@ -253,18 +268,20 @@ class LDEM extends AsyncStreamEmitter {
             let update = moduleProc.activeUpdate;
             if (!update) {
               this.logger.error(
-                `Module ${moduleAlias} did not have an active update to merge`
+                `Module ${moduleAlias} did not have an active update to merge`,
               );
               return;
             }
-            moduleProc.moduleUpdates = moduleProc.moduleUpdates.filter(currentUpdate => currentUpdate.id !== update.id);
+            moduleProc.moduleUpdates = moduleProc.moduleUpdates.filter(
+              (currentUpdate) => currentUpdate.id !== update.id,
+            );
             delete moduleProc.activeUpdate;
             delete moduleProc.prevModuleConfig;
             delete moduleProc.prevRawModuleConfig;
             this.emit('mergeUpdate', {
               moduleAlias,
               update,
-              updatedModuleConfig: moduleProc.rawModuleConfig
+              updatedModuleConfig: moduleProc.rawModuleConfig,
             });
           };
 
@@ -272,7 +289,7 @@ class LDEM extends AsyncStreamEmitter {
             let update = moduleProc.activeUpdate;
             if (!update) {
               this.logger.error(
-                `Module ${moduleAlias} did not have an active update to revert`
+                `Module ${moduleAlias} did not have an active update to revert`,
               );
               return;
             }
@@ -284,7 +301,7 @@ class LDEM extends AsyncStreamEmitter {
             this.emit('revertUpdate', {
               moduleAlias,
               update,
-              updatedModuleConfig: moduleProc.rawModuleConfig
+              updatedModuleConfig: moduleProc.rawModuleConfig,
             });
             moduleProc.wasReverted = true;
             moduleProc.kill();
@@ -323,28 +340,41 @@ class LDEM extends AsyncStreamEmitter {
               } else {
                 signalMessage = '';
               }
-              let isControlledRestart = moduleProc.wasUpdated || moduleProc.wasReverted;
+              let isControlledRestart =
+                moduleProc.wasUpdated || moduleProc.wasReverted;
               if (isControlledRestart) {
-                logger.debug(`Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage} as part of a controlled restart`);
+                logger.debug(
+                  `Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage} as part of a controlled restart`,
+                );
               } else {
-                logger.error(`Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage}`);
+                logger.error(
+                  `Process ${moduleProc.pid} of ${moduleAlias} module exited with code ${code}${signalMessage}`,
+                );
                 // If a process exits unexpectedly, revert any active update.
                 if (moduleProc.activeUpdate) {
                   logger.debug(
-                    `Update ${moduleProc.activeUpdate.id} of ${moduleAlias} module was reverted due to unexpected process exit`
+                    `Update ${moduleProc.activeUpdate.id} of ${moduleAlias} module was reverted due to unexpected process exit`,
                   );
                   moduleProc.revertActiveUpdate();
                 }
               }
               if (moduleProc.wasUpdated) {
-                logger.debug(`Module ${moduleAlias} will be respawned immediately as part of update`);
+                logger.debug(
+                  `Module ${moduleAlias} will be respawned immediately as part of update`,
+                );
               } else if (moduleProc.wasReverted) {
-                logger.debug(`Module ${moduleAlias} will be respawned immediately to revert the last update`);
+                logger.debug(
+                  `Module ${moduleAlias} will be respawned immediately to revert the last update`,
+                );
               } else if (moduleProc.moduleConfig.respawnDelay) {
-                logger.debug(`Module ${moduleAlias} will be respawned in ${moduleProc.moduleConfig.respawnDelay} milliseconds...`);
+                logger.debug(
+                  `Module ${moduleAlias} will be respawned in ${moduleProc.moduleConfig.respawnDelay} milliseconds...`,
+                );
                 await wait(moduleProc.moduleConfig.respawnDelay);
               } else {
-                logger.debug(`Module ${moduleAlias} will be respawned immediately`);
+                logger.debug(
+                  `Module ${moduleAlias} will be respawned immediately`,
+                );
               }
               launchModuleProcess(moduleProc);
             }
@@ -355,69 +385,76 @@ class LDEM extends AsyncStreamEmitter {
             appConfig,
             moduleConfig: moduleProc.moduleConfig,
             moduleUpdates: moduleProc.moduleUpdates,
-            moduleActiveUpdate: moduleProc.activeUpdate
+            moduleActiveUpdate: moduleProc.activeUpdate,
           });
 
           let workerHandshake;
           try {
-            [workerHandshake] = await moduleProc.listener('message').once(moduleProc.moduleConfig.ipcTimeout);
+            [workerHandshake] = await moduleProc
+              .listener('message')
+              .once(moduleProc.moduleConfig.ipcTimeout);
           } catch (err) {
             let error = new Error(
-              `The master process did not receive a workerHandshake packet from the ${
-                moduleAlias
-              } module before timeout of ${moduleProc.moduleConfig.ipcTimeout} milliseconds`
+              `The master process did not receive a workerHandshake packet from the ${moduleAlias} module before timeout of ${moduleProc.moduleConfig.ipcTimeout} milliseconds`,
             );
             logger.fatal(error);
             process.exit(1);
           }
           if (!workerHandshake || workerHandshake.event !== 'workerHandshake') {
             let error = new Error(
-              `The master process expected to receive a workerHandshake packet from the ${
-                moduleAlias
-              } module - Instead, it received: ${workerHandshake}`
+              `The master process expected to receive a workerHandshake packet from the ${moduleAlias} module - Instead, it received: ${workerHandshake}`,
             );
             logger.fatal(error);
             process.exit(1);
           }
 
-          moduleProc.sendMasterHandshake = function(dependencies, dependents, appDependentMap) {
+          moduleProc.sendMasterHandshake = function (
+            dependencies,
+            dependents,
+            appDependentMap,
+          ) {
             moduleProc.send({
               event: 'masterHandshake',
               dependencies,
               dependents,
-              appDependentMap
+              appDependentMap,
             });
           };
-          moduleProc.sendAppReady = function() {
+          moduleProc.sendAppReady = function () {
             moduleProc.send({
-              event: 'appReady'
+              event: 'appReady',
             });
           };
 
           if (prevModuleProcess) {
             moduleProc.dependencies = prevModuleProcess.dependencies;
             moduleProc.dependents = prevModuleProcess.dependents;
-            moduleProc.targetDependencies = prevModuleProcess.targetDependencies;
+            moduleProc.targetDependencies =
+              prevModuleProcess.targetDependencies;
 
             moduleProcesses[moduleAlias] = moduleProc;
-            moduleProc.sendMasterHandshake(moduleProc.dependencies, moduleProc.dependents, dependentMap);
+            moduleProc.sendMasterHandshake(
+              moduleProc.dependencies,
+              moduleProc.dependents,
+              dependentMap,
+            );
             // Listen for the 'moduleReady' event.
             try {
-              await moduleProc.readyEventStream.once(moduleProc.moduleConfig.ipcTimeout);
+              await moduleProc.readyEventStream.once(
+                moduleProc.moduleConfig.ipcTimeout,
+              );
             } catch (error) {
               logger.error(
-                `Did not receive a moduleReady event from ${
-                  moduleAlias
-                } module worker before timeout of ${
-                  moduleProc.moduleConfig.ipcTimeout
-                } milliseconds after respawn`
+                `Did not receive a moduleReady event from ${moduleAlias} module worker before timeout of ${moduleProc.moduleConfig.ipcTimeout} milliseconds after respawn`,
               );
               moduleProc.kill();
 
               return;
             }
 
-            logger.debug(`Process ${moduleProc.pid} of module ${moduleAlias} is ready after respawn`);
+            logger.debug(
+              `Process ${moduleProc.pid} of module ${moduleAlias} is ready after respawn`,
+            );
             await wait(appConfig.base.appReadyDelay);
             moduleProc.sendAppReady();
 
@@ -427,29 +464,38 @@ class LDEM extends AsyncStreamEmitter {
           // If module does not specify dependencies, assume it depends on all other modules.
           if (workerHandshake.dependencies == null) {
             // Use Set to guarantee uniqueness.
-            moduleProc.dependencies = [...new Set(moduleList.filter(mod => mod !== moduleAlias))];
+            moduleProc.dependencies = [
+              ...new Set(moduleList.filter((mod) => mod !== moduleAlias)),
+            ];
           } else {
             for (let dependencyName of workerHandshake.dependencies) {
               let targetDependencyName;
-              if (moduleProc.moduleConfig.moduleRedirects[dependencyName] == null) {
+              if (
+                moduleProc.moduleConfig.moduleRedirects[dependencyName] == null
+              ) {
                 targetDependencyName = dependencyName;
               } else {
-                targetDependencyName = moduleProc.moduleConfig.moduleRedirects[dependencyName];
+                targetDependencyName =
+                  moduleProc.moduleConfig.moduleRedirects[dependencyName];
               }
               if (!moduleSet.has(targetDependencyName)) {
                 let error = new Error(
-                  `Could not find the ${dependencyName} dependency target required by the ${moduleAlias} module`
+                  `Could not find the ${dependencyName} dependency target required by the ${moduleAlias} module`,
                 );
                 logger.fatal(error);
                 process.exit(1);
               }
             }
             // Use Set to guarantee uniqueness.
-            moduleProc.dependencies = [...new Set(workerHandshake.dependencies)];
+            moduleProc.dependencies = [
+              ...new Set(workerHandshake.dependencies),
+            ];
           }
 
-          let targetDependencies = moduleProc.dependencies.map(
-            dep => moduleProc.moduleConfig.moduleRedirects[dep] == null ? dep : moduleProc.moduleConfig.moduleRedirects[dep]
+          let targetDependencies = moduleProc.dependencies.map((dep) =>
+            moduleProc.moduleConfig.moduleRedirects[dep] == null
+              ? dep
+              : moduleProc.moduleConfig.moduleRedirects[dep],
           );
           // This accounts for redirects.
           moduleProc.targetDependencies = [...new Set(targetDependencies)];
@@ -463,9 +509,7 @@ class LDEM extends AsyncStreamEmitter {
           moduleProcesses[moduleAlias] = moduleProc;
         };
 
-        launchingModulesPromises.push(
-          launchModuleProcess()
-        );
+        launchingModulesPromises.push(launchModuleProcess());
       }
 
       await Promise.all(launchingModulesPromises);
@@ -489,7 +533,9 @@ class LDEM extends AsyncStreamEmitter {
         let nextLayerSet = new Set();
         for (let moduleAlias of currentLayer) {
           let moduleProc = moduleProcesses[moduleAlias];
-          let isReady = moduleProc.targetDependencies.every(dep => visitedModulesSet.has(dep));
+          let isReady = moduleProc.targetDependencies.every((dep) =>
+            visitedModulesSet.has(dep),
+          );
           if (isReady) {
             orderedProcNames.push(moduleAlias);
             visitedModulesSet.add(moduleAlias);
@@ -514,7 +560,9 @@ class LDEM extends AsyncStreamEmitter {
 
       if (unvisitedModuleSet.size) {
         logger.debug(
-          `Identified circular dependencies: ${[...unvisitedModuleSet].join(', ')}`
+          `Identified circular dependencies: ${[...unvisitedModuleSet].join(
+            ', ',
+          )}`,
         );
       }
 
@@ -522,30 +570,30 @@ class LDEM extends AsyncStreamEmitter {
       for (let unvisitedModuleAlias of unvisitedModuleSet) {
         orderedProcNames.push(unvisitedModuleAlias);
       }
-      logger.debug(
-        `Module loading order: ${orderedProcNames.join(', ')}`
-      );
+      logger.debug(`Module loading order: ${orderedProcNames.join(', ')}`);
 
       for (let moduleAlias of orderedProcNames) {
         let moduleProc = moduleProcesses[moduleAlias];
-        moduleProc.sendMasterHandshake(moduleProc.dependencies, moduleProc.dependents, dependentMap);
+        moduleProc.sendMasterHandshake(
+          moduleProc.dependencies,
+          moduleProc.dependents,
+          dependentMap,
+        );
         try {
           // Listen for the 'moduleReady' event.
           await moduleProc.readyEventStream.once(
-            moduleProc.moduleConfig.ipcTimeout
+            moduleProc.moduleConfig.ipcTimeout,
           );
         } catch (err) {
           let error = new Error(
-            `Did not receive a moduleReady event from the ${
-              moduleAlias
-            } module before timeout of ${
-              moduleProc.moduleConfig.ipcTimeout
-            } milliseconds`
+            `Did not receive a moduleReady event from the ${moduleAlias} module before timeout of ${moduleProc.moduleConfig.ipcTimeout} milliseconds`,
           );
           logger.fatal(error);
           process.exit(1);
         }
-        logger.debug(`Process ${moduleProc.pid} of module ${moduleProc.moduleAlias} is ready`);
+        logger.debug(
+          `Process ${moduleProc.pid} of module ${moduleProc.moduleAlias} is ready`,
+        );
       }
 
       await wait(appConfig.base.appReadyDelay);

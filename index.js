@@ -13,43 +13,69 @@ const WORKER_PATH = path.join(__dirname, 'worker.js');
 const defaultConfig = require('./config/default.json');
 
 /**
- * @typedef Chain
+ * @typedef Base
  * @type {Object}
- * @property {string} modulePath
- * @property {string} genesisPath
+ 
+ * @property {String} rootDirPath
+ * @property {String} workerCWDPath
+ * @property {Boolean} moduleEnabled
+ * @property {Number} ipcTimeout
+ * @property {Number} respawnDelay
+ * @property {Number} appReadyDelay
+ * @property {String} unixSocketNamePrefix
+ * @property {Boolean} allowPublishingWithoutAlias
+ * @property {String} defaultTargetModuleAlias
+ * @property {Object} moduleRedirects
+ * @property {String} moduleRedirects.app
+ * @property {String} moduleRedirects.network
+ * @property {String} moduleRedirects.interchain
+ * @property {Object} components
+ * @property {Object} components.logger
+ * @property {Boolean} components.logger.fileLoggingEnabled
+ * @property {String} components.logger.outputType
+ * @property {String} components.logger.loggerLibPath
+ * @property {String} components.logger.logFileName
+ * @property {{('fatal'|'error'|'warn'|'info'|'trace')}} components.logger.consoleLogLevel
+ * @property {{('fatal'|'error'|'warn'|'info'|'trace')}} components.logger.fileLogLevel
+ *
+ * @typedef Module
+ * @type {Object}
+ * @property {String} modulePath
+ * @property {String} genesisPath
  * @property {Object} components
  * @property {Object} components.dal
- * @property {string} components.dal.libPath
+ * @property {String} components.dal.libPath
  * @property {Object} components.dal.connection
- * @property {string} components.dal.connection.host
- * @property {string} components.dal.connection.user
- * @property {string} components.dal.connection.password
- * @property {string} components.dal.connection.database
- * @property {string} components.dal.connection.port
- *
- * @typedef App
- * @type {Object}
+ * @property {String} components.dal.connection.host
+ * @property {String} components.dal.connection.user
+ * @property {String} components.dal.connection.password
+ * @property {String} components.dal.connection.database
+ * @property {String} components.dal.connection.port
+ * @property {Number} respawnDelay
+ * @property {Number} defaultHTTPPort
+ * @property {Object} defaultWSPort
+ * @property {String} peerSelectionPluginPath
+ * @property {Number} maxOutboundConnections
+ * @property {Number} maxInboundConnections
  * @property {Object} nodeInfo
- * @property {string} nodeInfo.version
- * @property {string} nodeInfo.protocolVersion
- * @property {string} nodeInfo.nethash
- * @property {string} nodeInfo.broadhash
- *
- * @typedef Net
- * @type {Object}
- * @property {string} wsPort
- * @property {string} wsMaxMessageRate
- * @property {string} wsMaxMessageRatePenalty
- * @property {string} wsMaxPayloadInbound
- * @property {string} wsMaxPayloadOutbound
- * @property {string} maxPeerInfoSize
+ * @property {String} nodeInfo.version
+ * @property {String} nodeInfo.protocolVersion
+ * @property {String} nodeInfo.nethash
+ * @property {String} nodeInfo.broadhash
+ * @property {String} wsPort
+ * @property {String} wsMaxMessageRate
+ * @property {String} wsMaxMessageRatePenalty
+ * @property {String} wsMaxPayloadInbound
+ * @property {String} wsMaxPayloadOutbound
+ * @property {String} maxPeerInfoSize
  * @property {Array<seedPeer>} seedPeers
  *
  * @typedef seedPeer
  * @type {Object}
- * @property {string} ip
- * @property {string} wsPort
- *
+ * @property {String} ip
+ * @property {String} wsPort
+ * @param {Object} options.config.base Base config
+ * @param {Object.<String, Module} options.config.modules Modules config
  */
 
 class LDEM extends AsyncStreamEmitter {
@@ -57,15 +83,8 @@ class LDEM extends AsyncStreamEmitter {
    * Options
    * @param {Object} options
    * @param {Object} options.config Config
-   * @param {Object} options.config.base Base config
-   * @param {Number} options.config.base.ipcTimeout
-   * @param {Object} options.config.base.moduleRedirects
-   * @param {Object} options.config.base.components
-   * @param {Object} options.config.base.components.logger
-   * @param {string} options.config.base.components.logger.logFileName Path and lame of the logfile
-   * @param {('fatal'|'error'|'warn'|'info'|'trace')} options.config.base.components.logger.consoleLogLevel What the logger should display
-   * @param {('fatal'|'error'|'warn'|'info'|'trace')} options.config.base.components.logger.fileLogLevel What the logger should display
-   * @param {Object.<string, (Chain|App|Net)} options.config.modules Modules config
+   * @param {Base} options.config.base
+   * @param {Module} options.config.module
    * @param {Array.<{}>} options.updates Array of updates
    */
   constructor(options) {
@@ -94,7 +113,7 @@ class LDEM extends AsyncStreamEmitter {
       let plainModuleConfig = appConfig.modules[moduleAlias];
 
       /**
-       * @param {string} currentAlias current module
+       * @param {String} currentAlias current module
        * @param {Object} currentConfig Config of current alias
        * @param {Set} visitedAliases Set of past aliases
        */

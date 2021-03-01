@@ -20,8 +20,8 @@ const defaultConfig = require('./config/default.json');
  * @property {String} logger.outputType
  * @property {String} logger.loggerLibPath
  * @property {String} logger.logFileName
- * @property {{('fatal'|'error'|'warn'|'info'|'trace')}} logger.consoleLogLevel
- * @property {{('fatal'|'error'|'warn'|'info'|'trace')}} logger.fileLogLevel
+ * @property {('fatal'|'error'|'warn'|'info'|'trace')} logger.consoleLogLevel
+ * @property {('fatal'|'error'|'warn'|'info'|'trace')} logger.fileLogLevel
  * @property {Object} dal
  * @property {String} dal.libPath
  * @property {Object} dal.connection

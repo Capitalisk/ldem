@@ -18,7 +18,7 @@
     "async-stream-emitter": "^4.0.0",
     "eetase": "^4.0.0",
     "leasehold-app": "^3.0.0",
-    "leasehold-interchain": "^3.0.3",
+    "leasehold-interchain": "^3.1.0",
     "leasehold-net": "^5.1.3",
     "minimist": "^1.2.0",
     "object-assign-deep": "^0.4.0",

@@ -19,7 +19,7 @@
     "eetase": "^4.0.0",
     "leasehold-app": "^3.0.0",
     "leasehold-interchain": "^3.1.0",
-    "leasehold-net": "^5.1.4",
+    "leasehold-net": "^5.1.6",
     "minimist": "^1.2.0",
     "object-assign-deep": "^0.4.0",
     "socketcluster-client": "^16.0.1",

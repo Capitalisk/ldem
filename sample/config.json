@@ -48,8 +48,15 @@
     }
   },
   "modules": {
-    "leasehold_app": {},
-    "leasehold_net": {},
+    "capitalisk_app": {},
+    "capitalisk_net": {
+      "seedPeers": [
+        {
+          "ip": "18.206.164.187",
+          "wsPort": 7001
+        }
+      ]
+    },
     "one": {
       "modulePath": "sample/modules/one.js",
       "description": "This is module one",

@@ -9,7 +9,7 @@
   "keywords": [
     "ldex",
     "dex",
-    "leasehold",
+    "capitalisk",
     "lisk"
   ],
   "author": "Jonathan Gros-Dubois",
@@ -17,9 +17,9 @@
   "dependencies": {
     "async-stream-emitter": "^4.0.0",
     "eetase": "^4.0.0",
-    "leasehold-app": "^3.0.0",
-    "leasehold-interchain": "^3.1.0",
-    "leasehold-net": "^5.1.6",
+    "capitalisk-app": "^3.0.0",
+    "capitalisk-interchain": "^4.0.0",
+    "capitalisk-net": "^6.0.1",
     "minimist": "^1.2.0",
     "object-assign-deep": "^0.4.0",
     "socketcluster-client": "^16.0.1",

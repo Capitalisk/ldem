@@ -10,9 +10,9 @@
     "allowPublishingWithoutAlias": false,
     "defaultTargetModuleAlias": "chain",
     "moduleRedirects": {
-      "app": "leasehold_app",
-      "network": "leasehold_net",
-      "interchain": "leasehold_app"
+      "app": "capitalisk_app",
+      "network": "capitalisk_net",
+      "interchain": "capitalisk_app"
     },
     "components": {
       "logger": {
@@ -26,8 +26,8 @@
     }
   },
   "modules": {
-    "leasehold_app": {
-      "modulePath": "node_modules/leasehold-app",
+    "capitalisk_app": {
+      "modulePath": "node_modules/capitalisk-app",
       "respawnDelay": 0,
       "defaultHTTPPort": 7000,
       "defaultWSPort": 7001,
@@ -38,31 +38,14 @@
         "broadhash": "da3ed6a45429278bac2666961289ca17ad86595d33b31037615d4b8e8f158bba"
       }
     },
-    "leasehold_net": {
-      "modulePath": "node_modules/leasehold-net",
+    "capitalisk_net": {
+      "modulePath": "node_modules/capitalisk-net",
       "respawnDelay": 0,
-      "peerSelectionPluginPath": "../leasehold-interchain",
+      "peerSelectionPluginPath": "../capitalisk-interchain",
       "wsPort": 7001,
       "maxOutboundConnections": 10,
       "maxInboundConnections": 20,
-      "seedPeers": [
-        {
-          "ip": "18.206.164.187",
-          "wsPort": 7001
-        },
-        {
-          "ip": "testnet-seed-03.lisk.io",
-          "wsPort": 7001
-        },
-        {
-          "ip": "testnet-seed-04.lisk-nodes.net",
-          "wsPort": 7001
-        },
-        {
-          "ip": "testnet-seed-05.lisk.io",
-          "wsPort": 7001
-        }
-      ]
+      "seedPeers": []
     }
   }
 }

@@ -214,7 +214,23 @@ class Channel extends AsyncStreamEmitter {
       params: data
     };
     let targetSocket = this.clients[targetModuleAlias];
-    return targetSocket.invoke(locator, invokePacket, options);
+    try {
+      return await targetSocket.invoke(locator, invokePacket, options);
+    } catch (err) {
+      if (err.name === 'TimeoutError') {
+        let error = new Error(
+          `Failed to invoke worker action ${
+            action
+          } on the ${
+            targetModuleAlias
+          } module because of timeout`
+        );
+        error.name = err.name;
+        throw error;
+      }
+      throw err;
+    }
+    return result;
   }
 
   async invoke(action, data, options) {
@@ -237,7 +253,22 @@ class Channel extends AsyncStreamEmitter {
       params: data
     };
     let targetSocket = this.clients[targetModuleAlias];
-    return targetSocket.invoke(locator, invokePacket, options);
+    try {
+      return await targetSocket.invoke(locator, invokePacket, options);
+    } catch (err) {
+      if (err.name === 'TimeoutError') {
+        let error = new Error(
+          `Failed to invoke action ${
+            action
+          } on the ${
+            targetModuleAlias
+          } module because of timeout`
+        );
+        error.name = err.name;
+        throw error;
+      }
+      throw err;
+    }
   }
 
   async invokePublic(action, data, options) {
@@ -261,7 +292,22 @@ class Channel extends AsyncStreamEmitter {
       params: data,
       info: options
     };
-    return targetSocket.invoke(locator, invokePacket, options);
+    try {
+      return await targetSocket.invoke(locator, invokePacket, options);
+    } catch (err) {
+      if (err.name === 'TimeoutError') {
+        let error = new Error(
+          `Failed to invoke public action ${
+            action
+          } on the ${
+            targetModuleAlias
+          } module because of timeout`
+        );
+        error.name = err.name;
+        throw error;
+      }
+      throw err;
+    }
   }
 
   _getTargetChannel({targetModuleAlias, locator}) {

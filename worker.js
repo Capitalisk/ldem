@@ -15,6 +15,7 @@ const SOCKET_REPLACED_CODE = 4500;
 
 const MODULE_ALIAS = argv['ldem-module-alias'];
 let ipcTimeout = argv['ldem-ipc-timeout'];
+let ackTimeout = argv['ldem-ack-timeout'];
 
 (async () => {
   await process.listener('disconnect').once();
@@ -30,8 +31,9 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
   }
   let [{appConfig, moduleConfig, moduleUpdates, moduleActiveUpdate}] = masterInitResult;
 
-  // Update ipcTimeout using the config option at the module scope
+  // Update ipcTimeout and ackTimeout using the config option at the module scope
   ipcTimeout = moduleConfig.ipcTimeout;
+  ackTimeout = moduleConfig.ackTimeout;
   let componentsConfig = moduleConfig.components;
   let loggerConfig = componentsConfig.logger;
 
@@ -243,7 +245,9 @@ let ipcTimeout = argv['ldem-ipc-timeout'];
     modulePathFunction: getUnixSocketPath,
     exchange: agServer.exchange,
     inboundModuleSockets,
+    connectTimeout: ipcTimeout,
     subscribeTimeout: ipcTimeout,
+    ackTimeout,
     allowPublishingWithoutAlias: targetModule.options.allowPublishingWithoutAlias,
     defaultTargetModuleAlias: targetModule.options.defaultTargetModuleAlias
   });

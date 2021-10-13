@@ -110,7 +110,9 @@ class LDEM extends AsyncStreamEmitter {
           '--ldem-module-alias',
           moduleAlias,
           '--ldem-ipc-timeout',
-          moduleConfig.ipcTimeout
+          moduleConfig.ipcTimeout,
+          '--ldem-ack-timeout',
+          moduleConfig.ackTimeout
         ];
         let execOptions = {
           env: {...process.env},

@@ -14,7 +14,9 @@ class Channel extends AsyncStreamEmitter {
       modulePathFunction,
       exchange,
       inboundModuleSockets,
+      connectTimeout,
       subscribeTimeout,
+      ackTimeout,
       allowPublishingWithoutAlias,
       defaultTargetModuleAlias
     } = options;
@@ -26,7 +28,9 @@ class Channel extends AsyncStreamEmitter {
     this.moduleRedirects = moduleRedirects;
     this.clients = {};
     this.inboundModuleSockets = inboundModuleSockets;
+    this.connectTimeout = connectTimeout;
     this.subscribeTimeout = subscribeTimeout;
+    this.ackTimeout = ackTimeout;
     this.moduleActions = moduleActions;
     this.allowPublishingWithoutAlias = allowPublishingWithoutAlias;
     this.defaultTargetModuleAlias = defaultTargetModuleAlias;
@@ -39,6 +43,8 @@ class Channel extends AsyncStreamEmitter {
       this._dependencyLookup[dependencyName] = true;
       let client = socketClusterClient.create({
         protocolScheme: 'ws+unix',
+        connectTimeout,
+        ackTimeout,
         socketPath: modulePathFunction(dependencyName),
         query: {source: moduleAlias}
       });

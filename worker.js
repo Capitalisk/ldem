@@ -2,6 +2,8 @@ const Channel = require('./channel');
 const http = require('http');
 const objectAssignDeep = require('object-assign-deep');
 const querystring = require('querystring');
+const path = require('path');
+
 const eetase = require('eetase');
 eetase(process);
 
@@ -52,7 +54,7 @@ let ackTimeout = argv['ldem-ack-timeout'];
     activeUpdate: moduleActiveUpdate
   });
 
-  let TargetModuleClass = require(moduleConfig.modulePath);
+  let TargetModuleClass = require(path.resolve(process.cwd(), moduleConfig.modulePath));
 
   let defaultModuleConfig = TargetModuleClass.defaults || {};
   if (defaultModuleConfig.default != null) {

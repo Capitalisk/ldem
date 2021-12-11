@@ -42,7 +42,7 @@
     "capitalisk_net": {
       "modulePath": "node_modules/capitalisk-net",
       "respawnDelay": 0,
-      "peerSelectionPluginPath": "../capitalisk-interchain",
+      "peerSelectionPluginPath": "node_modules/capitalisk-interchain",
       "wsPort": 7001,
       "maxOutboundConnections": 10,
       "maxInboundConnections": 20,

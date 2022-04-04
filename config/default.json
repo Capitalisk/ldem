@@ -1,6 +1,7 @@
 {
   "base": {
     "rootDirPath": null,
+    "useRootDirAsCWD": true,
     "workerCWDPath": null,
     "moduleEnabled": true,
     "ipcTimeout": 180000,

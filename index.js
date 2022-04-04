@@ -32,6 +32,7 @@ class LDEM extends AsyncStreamEmitter {
 
     let appConfig = objectAssignDeep({}, defaultConfig, config);
     let rootDirPath = appConfig.base.rootDirPath || PROJECT_MAIN_DIR_PATH;
+    let cwd = appConfig.base.useRootDirAsCWD ? rootDirPath : CWD;
     let componentsConfig = appConfig.base.components;
     let loggerConfig = componentsConfig.logger;
 
@@ -104,7 +105,7 @@ class LDEM extends AsyncStreamEmitter {
 
       for (let moduleAlias of moduleList) {
         let moduleConfig = appConfig.modules[moduleAlias];
-        let workerCWDPath = moduleConfig.workerCWDPath || CWD;
+        let workerCWDPath = moduleConfig.workerCWDPath || cwd;
 
         let workerArgs = [
           '--ldem-module-alias',

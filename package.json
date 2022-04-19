@@ -1,6 +1,6 @@
 {
   "name": "ldem",
-  "version": "8.1.0",
+  "version": "8.1.1",
   "description": "Multi-process controller optimized for operating a node with many Lisk modules. Ideal for lisk-dex nodes.",
   "main": "index.js",
   "scripts": {
@@ -18,7 +18,7 @@
     "async-stream-emitter": "^4.0.0",
     "capitalisk-app": "^3.0.0",
     "capitalisk-interchain": "^4.0.0",
-    "capitalisk-net": "^7.0.0",
+    "capitalisk-net": "^7.0.1",
     "eetase": "^4.0.0",
     "minimist": "^1.2.0",
     "object-assign-deep": "^0.4.0",

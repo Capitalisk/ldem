@@ -146,7 +146,7 @@ let ackTimeout = argv['ldem-ack-timeout'];
       rpcError.sourceError = {
         ...error,
         message: error.message,
-        stack: error.stack
+        stack: requestData.isPublic ? undefined : error.stack
       };
       request.error(rpcError);
 

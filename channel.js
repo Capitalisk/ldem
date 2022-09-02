@@ -215,9 +215,20 @@ class Channel extends AsyncStreamEmitter {
       error.name = 'InvalidTargetWorkerError';
       throw error;
     }
+    if (typeof data !== 'object' && data != null) {
+      let error = new Error(
+        `Failed to invoke worker action ${
+          action
+        } on the ${
+          targetModuleAlias
+        } module because data must be an object if specified`
+      );
+      error.name = 'InvalidDataError';
+      throw error;
+    }
     let invokePacket = {
       isWorkerAction: true,
-      params: data
+      params: data || {}
     };
     let targetSocket = this.clients[targetModuleAlias];
     try {
@@ -254,9 +265,20 @@ class Channel extends AsyncStreamEmitter {
       error.name = 'InvalidTargetModuleError';
       throw error;
     }
+    if (typeof data !== 'object' && data != null) {
+      let error = new Error(
+        `Failed to invoke action ${
+          action
+        } on the ${
+          targetModuleAlias
+        } module because data must be an object if specified`
+      );
+      error.name = 'InvalidDataError';
+      throw error;
+    }
     let invokePacket = {
       isPublic: false,
-      params: data
+      params: data || {}
     };
     let targetSocket = this.clients[targetModuleAlias];
     try {
@@ -293,9 +315,20 @@ class Channel extends AsyncStreamEmitter {
       error.name = 'UnreachableTargetModuleError';
       throw error;
     }
+    if (typeof data !== 'object' && data != null) {
+      let error = new Error(
+        `Failed to invoke public action ${
+          action
+        } on the ${
+          targetModuleAlias
+        } module because data must be an object if specified`
+      );
+      error.name = 'InvalidDataError';
+      throw error;
+    }
     let invokePacket = {
       isPublic: true,
-      params: data,
+      params: data || {},
       info: options
     };
     try {

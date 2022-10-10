@@ -19,7 +19,7 @@
     "capitalisk-app": "^3.0.0",
     "capitalisk-interchain": "^4.0.0",
     "capitalisk-net": "^7.1.1",
-    "eetase": "^4.0.0",
+    "eetase": "^5.0.0",
     "minimist": "^1.2.0",
     "object-assign-deep": "^0.4.0",
     "socketcluster-client": "^16.0.1",

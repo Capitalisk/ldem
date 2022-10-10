@@ -1,6 +1,6 @@
 {
   "name": "ldem",
-  "version": "9.0.0",
+  "version": "9.1.0",
   "description": "Multi-process controller optimized for operating a node with many Lisk modules. Ideal for lisk-dex nodes.",
   "main": "index.js",
   "scripts": {

@@ -277,3 +277,7 @@ let ackTimeout = argv['ldem-ack-timeout'];
     event: 'moduleReady'
   });
 })();
+
+process.send({
+  event: 'workerInit'
+});

@@ -293,6 +293,18 @@ class LDEM extends AsyncStreamEmitter {
             }
           })();
 
+          try {
+            await moduleProc.listener('message').once(moduleProc.moduleConfig.ipcTimeout);
+          } catch (err) {
+            let error = new Error(
+              `The master process did not receive a workerInit packet from the ${
+                moduleAlias
+              } module before timeout of ${moduleProc.moduleConfig.ipcTimeout} milliseconds`
+            );
+            logger.fatal(error);
+            process.exit(1);
+          }
+
           moduleProc.send({
             event: 'masterInit',
             appConfig,

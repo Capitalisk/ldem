@@ -1,6 +1,6 @@
 {
   "name": "ldem",
-  "version": "9.2.3",
+  "version": "9.2.4",
   "description": "Multi-process controller optimized for operating a node with many Lisk modules. Ideal for lisk-dex nodes.",
   "main": "index.js",
   "scripts": {
@@ -9,8 +9,7 @@
   "keywords": [
     "ldex",
     "dex",
-    "capitalisk",
-    "lisk"
+    "capitalisk"
   ],
   "author": "Jonathan Gros-Dubois",
   "license": "GPL-3.0",

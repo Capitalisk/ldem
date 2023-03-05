@@ -71,7 +71,7 @@ class Channel extends AsyncStreamEmitter {
   }
 
   async subscribe(channel, handler) {
-    let {targetModuleAlias, locator} = this._getLocatorInfo(channel);
+    let {targetModuleAlias, locator} = this._getLocatorInfo(channel, true);
     let targetChannel = this._computeTargetChannel(targetModuleAlias, locator);
     if (!this._dependencyLookup[targetModuleAlias]) {
       let error = new Error(
@@ -130,7 +130,7 @@ class Channel extends AsyncStreamEmitter {
   }
 
   unsubscribe(channel, handler) {
-    let {targetModuleAlias, locator} = this._getLocatorInfo(channel);
+    let {targetModuleAlias, locator} = this._getLocatorInfo(channel, true);
     let targetChannel = this._computeTargetChannel(targetModuleAlias, locator);
     if (!this._dependencyLookup[targetModuleAlias]) {
       let error = new Error(
@@ -167,7 +167,7 @@ class Channel extends AsyncStreamEmitter {
   }
 
   async once(channel, handler) {
-    let locatorInfo = this._getLocatorInfo(channel);
+    let locatorInfo = this._getLocatorInfo(channel, true);
     let targetChannel = this._getTargetChannel(locatorInfo);
     let onceHandler = async (event) => {
       await handler(event);
@@ -177,7 +177,7 @@ class Channel extends AsyncStreamEmitter {
   }
 
   publish(channel, data, info) {
-    let locatorInfo = this._getLocatorInfo(channel);
+    let locatorInfo = this._getLocatorInfo(channel, false);
     if (!this.allowPublishingWithoutAlias && !locatorInfo.hasAlias) {
       throw new Error(
         `Publishing to a channel without specifying a module alias is not allowed - The ${
@@ -201,7 +201,7 @@ class Channel extends AsyncStreamEmitter {
   }
 
   async invokeOnWorker(action, data, options) {
-    let {targetModuleAlias, locator} = this._getLocatorInfo(action);
+    let {targetModuleAlias, locator} = this._getLocatorInfo(action, true);
     if (!this._dependencyLookup[targetModuleAlias]) {
       let error = new Error(
         `Cannot invoke worker action ${
@@ -251,7 +251,7 @@ class Channel extends AsyncStreamEmitter {
   }
 
   async invoke(action, data, options) {
-    let {targetModuleAlias, locator} = this._getLocatorInfo(action);
+    let {targetModuleAlias, locator} = this._getLocatorInfo(action, true);
     if (!this._dependencyLookup[targetModuleAlias]) {
       let error = new Error(
         `Cannot invoke action ${
@@ -300,7 +300,7 @@ class Channel extends AsyncStreamEmitter {
   }
 
   async invokePublic(action, data, options) {
-    let {targetModuleAlias, locator} = this._getLocatorInfo(action);
+    let {targetModuleAlias, locator} = this._getLocatorInfo(action, true);
     let targetSocket = this.clients[targetModuleAlias] || this.inboundModuleSockets[targetModuleAlias];
     if (!targetSocket) {
       let error = new Error(
@@ -357,7 +357,7 @@ class Channel extends AsyncStreamEmitter {
     return `${targetModuleAlias}:${locator}`;
   }
 
-  _getLocatorInfo(command) {
+  _getLocatorInfo(command, applyRedirect) {
     let targetModuleAlias;
     let locator;
     let hasAlias;
@@ -371,7 +371,7 @@ class Channel extends AsyncStreamEmitter {
       locator = parts.slice(1).join(':');
       hasAlias = true;
     }
-    if (this.moduleRedirects[targetModuleAlias] != null) {
+    if (applyRedirect && this.moduleRedirects[targetModuleAlias] != null) {
       targetModuleAlias = this.moduleRedirects[targetModuleAlias];
     }
     return {targetModuleAlias, locator, hasAlias};

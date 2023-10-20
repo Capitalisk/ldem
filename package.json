@@ -1,6 +1,6 @@
 {
   "name": "ldem",
-  "version": "10.1.1",
+  "version": "10.2.0",
   "description": "Multi-process controller optimized for operating a node with many Lisk modules. Ideal for lisk-dex nodes.",
   "main": "index.js",
   "scripts": {
@@ -14,16 +14,16 @@
   "author": "Jonathan Gros-Dubois",
   "license": "GPL-3.0",
   "dependencies": {
-    "async-stream-emitter": "^6.0.1",
+    "async-stream-emitter": "^7.0.1",
     "capitalisk-app": "^4.0.0",
     "capitalisk-interchain": "^4.0.1",
-    "capitalisk-net": "^8.1.0",
-    "eetase": "^6.0.0",
+    "capitalisk-net": "^8.2.0",
+    "eetase": "^7.0.0",
     "minimist": "^1.2.0",
     "object-assign-deep": "^0.4.0",
-    "socketcluster-client": "^18.1.3",
-    "socketcluster-server": "^18.1.2",
-    "writable-consumable-stream": "^4.0.1"
+    "socketcluster-client": "^19.0.2",
+    "socketcluster-server": "^19.0.1",
+    "writable-consumable-stream": "^4.1.0"
   },
   "repository": {
     "type": "git",

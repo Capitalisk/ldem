@@ -15,7 +15,7 @@
   "license": "GPL-3.0",
   "dependencies": {
     "async-stream-emitter": "^7.0.1",
-    "capitalisk-app": "^4.0.0",
+    "capitalisk-app": "^5.0.0",
     "capitalisk-interchain": "^4.0.1",
     "capitalisk-net": "^8.2.1",
     "eetase": "^7.0.0",
